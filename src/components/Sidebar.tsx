@@ -1,26 +1,16 @@
-import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, 
-  Users, 
   DollarSign, 
   ShoppingCart, 
   Truck, 
   UserCheck,
   BarChart3,
-  Settings,
-  ChevronDown,
-  Building2,
-  FileText,
   Target,
-  Phone,
-  Mail,
-  Package,
   User
 } from "lucide-react";
 import { Logo } from "./Logo";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
@@ -31,35 +21,22 @@ const navigationItems = [
     role: ["admin", "manager"]
   },
   {
-    title: "Sales Management",
+    title: "Sales",
+    href: "/sales",
     icon: Target,
-    role: ["admin", "manager", "executive"],
-    subItems: [
-      { title: "Lead Management", href: "/leads", icon: Users },
-      { title: "Quotations", href: "/quotations", icon: FileText },
-      { title: "Communications", href: "/communications", icon: Mail },
-      { title: "Analytics", href: "/sales-analytics", icon: BarChart3 }
-    ]
+    role: ["admin", "manager", "executive"]
   },
   {
     title: "Accounts",
+    href: "/accounts", 
     icon: DollarSign,
-    role: ["admin", "accountant", "manager"],
-    subItems: [
-      { title: "Invoicing", href: "/invoicing", icon: FileText },
-      { title: "Payments", href: "/payments", icon: DollarSign },
-      { title: "Reports", href: "/accounts-reports", icon: BarChart3 }
-    ]
+    role: ["admin", "accountant", "manager"]
   },
   {
     title: "Procurement",
+    href: "/procurement",
     icon: ShoppingCart,
-    role: ["admin", "procurement", "manager"],
-    subItems: [
-      { title: "Vendors", href: "/vendors", icon: Building2 },
-      { title: "Purchase Orders", href: "/purchase-orders", icon: Package },
-      { title: "Inventory", href: "/inventory", icon: ShoppingCart }
-    ]
+    role: ["admin", "procurement", "manager"]
   },
   {
     title: "Dispatch",
@@ -84,12 +61,6 @@ const navigationItems = [
     href: "/employee",
     icon: User,
     role: ["admin", "manager", "executive", "accountant", "hr", "procurement", "dispatch"]
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
-    role: ["admin"]
   }
 ];
 
@@ -99,28 +70,11 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const [openSections, setOpenSections] = useState<string[]>(["Sales Management"]);
-  const currentUserRole = "admin"; // This would come from auth context
-
-  const toggleSection = (title: string) => {
-    setOpenSections(prev => 
-      prev.includes(title) 
-        ? prev.filter(s => s !== title)
-        : [...prev, title]
-    );
-  };
+  const { profile } = useAuth();
+  const currentUserRole = profile?.role || "admin";
 
   const hasAccess = (roles: string[]) => {
     return roles.includes(currentUserRole);
-  };
-
-  const isActive = (href: string) => {
-    return location.pathname === href;
-  };
-
-  const isSectionActive = (subItems?: Array<{href: string}>) => {
-    if (!subItems) return false;
-    return subItems.some(item => location.pathname === item.href);
   };
 
   return (
@@ -136,58 +90,10 @@ export function Sidebar({ className }: SidebarProps) {
           {navigationItems.map((item) => {
             if (!hasAccess(item.role)) return null;
 
-            if (item.subItems) {
-              const isOpen = openSections.includes(item.title);
-              const hasActiveChild = isSectionActive(item.subItems);
-
-              return (
-                <Collapsible
-                  key={item.title}
-                  open={isOpen}
-                  onOpenChange={() => toggleSection(item.title)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-between px-3 py-2 text-left font-medium",
-                        (isOpen || hasActiveChild) && "bg-muted text-primary"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </div>
-                      <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-1 space-y-1 pl-6">
-                    {item.subItems.map((subItem) => (
-                      <NavLink
-                        key={subItem.href}
-                        to={subItem.href}
-                        className={({ isActive }) =>
-                          cn(
-                            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-brand"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )
-                        }
-                      >
-                        <subItem.icon className="h-4 w-4" />
-                        <span>{subItem.title}</span>
-                      </NavLink>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            }
-
             return (
               <NavLink
                 key={item.href}
-                to={item.href!}
+                to={item.href}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 font-medium transition-colors",
@@ -209,11 +115,17 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
-            <span className="text-sm font-semibold text-white">A</span>
+            <span className="text-sm font-semibold text-white">
+              {profile?.full_name?.charAt(0) || "U"}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Admin User</p>
-            <p className="text-xs text-muted-foreground truncate">Administrator</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {profile?.full_name || "User"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate capitalize">
+              {profile?.role || "User"}
+            </p>
           </div>
         </div>
       </div>
