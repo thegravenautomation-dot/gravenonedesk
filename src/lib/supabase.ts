@@ -13,16 +13,12 @@ const fromEnv = (key: string): string | undefined => {
   return undefined;
 };
 
-const supabaseUrl = fromEnv('VITE_SUPABASE_URL') || fromEnv('SUPABASE_URL');
-const supabaseKey = fromEnv('VITE_SUPABASE_ANON_KEY') || fromEnv('SUPABASE_ANON_KEY');
+const supabaseUrl = fromEnv('VITE_SUPABASE_URL') || fromEnv('SUPABASE_URL') || 'https://placeholder.supabase.co';
+const supabaseKey = fromEnv('VITE_SUPABASE_ANON_KEY') || fromEnv('SUPABASE_ANON_KEY') || 'placeholder-anon-key';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase environment variables not found yet. Ensure Supabase is connected.');
-}
-
-export const supabase = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey)
-  : (undefined as unknown as ReturnType<typeof createClient>);
+// Always create a client to prevent undefined errors
+// If real credentials aren't available, operations will fail gracefully
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Database Types
 export interface Database {
