@@ -17,9 +17,14 @@ import NotFound from "./pages/NotFound";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const isDemo = typeof window !== 'undefined' && (
+    (window as any).__ENV?.DEMO_MODE === '1' ||
+    (window as any).ENV?.DEMO_MODE === '1' ||
+    localStorage.getItem('DEMO_MODE') === '1'
+  );
   
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
+  if (loading && !isDemo) return <div>Loading...</div>;
+  if (!user && !isDemo) return <Navigate to="/login" />;
   
   return <>{children}</>;
 }

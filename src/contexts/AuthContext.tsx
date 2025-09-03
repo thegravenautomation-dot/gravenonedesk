@@ -32,6 +32,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const isDemo = typeof window !== 'undefined' && (
+      (window as any).__ENV?.DEMO_MODE === '1' ||
+      (window as any).ENV?.DEMO_MODE === '1' ||
+      localStorage.getItem('DEMO_MODE') === '1'
+    )
+
+    if (isDemo) {
+      // Mock session for demo preview
+      setUser({} as User)
+      setProfile({
+        id: 'demo-user',
+        email: 'demo@gravenautomation.com',
+        full_name: 'Demo Admin',
+        role: 'admin',
+        branch_id: 'demo-branch',
+        phone: ''
+      })
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)

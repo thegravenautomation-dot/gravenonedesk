@@ -73,6 +73,11 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
+            <div className="pt-2">
+              <Button type="button" variant="outline" className="w-full" onClick={() => { localStorage.setItem('DEMO_MODE','1'); window.location.href = '/'; }}>
+                Preview in Demo Mode
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

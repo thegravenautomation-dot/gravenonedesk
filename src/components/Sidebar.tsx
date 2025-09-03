@@ -68,15 +68,10 @@ const navigationItems = [
     role: ["admin", "dispatch", "manager"]
   },
   {
-    title: "HR Management",
+    title: "HR",
+    href: "/hr",
     icon: UserCheck,
-    role: ["admin", "hr", "manager"],
-    subItems: [
-      { title: "Employees", href: "/employees", icon: Users },
-      { title: "Attendance", href: "/attendance", icon: UserCheck },
-      { title: "Payroll", href: "/payroll", icon: DollarSign },
-      { title: "Leave Management", href: "/leaves", icon: FileText }
-    ]
+    role: ["admin", "hr", "manager"]
   },
   {
     title: "Analytics",
