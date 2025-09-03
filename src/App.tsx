@@ -31,6 +31,41 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const queryClient = new QueryClient();
 
+function AllowedRoute({ roles, children }: { roles: Array<'admin'|'manager'|'executive'|'accountant'|'hr'|'procurement'|'dispatch'>; children: React.ReactNode }) {
+  const { profile } = useAuth();
+  const isDemo = typeof window !== 'undefined' && (
+    (window as any).__ENV?.DEMO_MODE === '1' ||
+    (window as any).ENV?.DEMO_MODE === '1' ||
+    localStorage.getItem('DEMO_MODE') === '1'
+  );
+  const role = profile?.role || (isDemo ? 'admin' : undefined);
+  if (!role || !roles.includes(role)) return <Navigate to="/login" />;
+  return <>{children}</>;
+}
+
+function RoleRedirect() {
+  const { profile } = useAuth();
+  const isDemo = typeof window !== 'undefined' && (
+    (window as any).__ENV?.DEMO_MODE === '1' ||
+    (window as any).ENV?.DEMO_MODE === '1' ||
+    localStorage.getItem('DEMO_MODE') === '1'
+  );
+  const role = profile?.role || (isDemo ? 'admin' : undefined);
+
+  const roleToPath: Record<string, string> = {
+    admin: '/',
+    manager: '/',
+    executive: '/sales',
+    accountant: '/accounts',
+    hr: '/hr',
+    procurement: '/procurement',
+    dispatch: '/dispatch',
+  };
+
+  const target = role ? (roleToPath[role] || '/employee') : '/login';
+  return <Navigate to={target} replace />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -40,15 +75,15 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<Navigate to="/" replace />} />
-            <Route path="/sales" element={<ProtectedRoute><SalesDashboard /></ProtectedRoute>} />
-            <Route path="/accounts" element={<ProtectedRoute><AccountsDashboard /></ProtectedRoute>} />
-            <Route path="/hr" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
-            <Route path="/procurement" element={<ProtectedRoute><ProcurementDashboard /></ProtectedRoute>} />
-            <Route path="/dispatch" element={<ProtectedRoute><DispatchDashboard /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
-            <Route path="/employee" element={<ProtectedRoute><EmployeePortal /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><AllowedRoute roles={['admin','manager']}><Index /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute><AllowedRoute roles={['admin','manager','executive']}><SalesDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/accounts" element={<ProtectedRoute><AllowedRoute roles={['admin','accountant','manager']}><AccountsDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/hr" element={<ProtectedRoute><AllowedRoute roles={['admin','hr','manager']}><HRDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/procurement" element={<ProtectedRoute><AllowedRoute roles={['admin','procurement','manager']}><ProcurementDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/dispatch" element={<ProtectedRoute><AllowedRoute roles={['admin','dispatch','manager']}><DispatchDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><AllowedRoute roles={['admin','manager']}><AnalyticsDashboard /></AllowedRoute></ProtectedRoute>} />
+            <Route path="/employee" element={<ProtectedRoute><AllowedRoute roles={['admin','manager','executive','accountant','hr','procurement','dispatch']}><EmployeePortal /></AllowedRoute></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

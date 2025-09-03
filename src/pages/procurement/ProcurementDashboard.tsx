@@ -45,6 +45,19 @@ export default function ProcurementDashboard() {
     category: '',
   })
 
+  // Demo-only Purchase Orders state
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
+  const [newPOOpen, setNewPOOpen] = useState(false)
+  const [newPO, setNewPO] = useState<Partial<PurchaseOrder>>({
+    po_number: '',
+    vendor_name: '',
+    description: '',
+    amount: 0,
+    currency: 'USD',
+    expected_date: '',
+    status: 'draft',
+  })
+
   useEffect(() => {
     fetchVendors()
   }, [])
