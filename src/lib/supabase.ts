@@ -1,13 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Resolve Supabase config from multiple sources (Lovable integration friendly)
+declare global { interface Window { __ENV?: Record<string, string>; ENV?: Record<string, string>; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; } }
+
+const fromEnv = (key: string): string | undefined => {
+  const viteVal = (import.meta as any)?.env?.[key];
+  if (viteVal) return viteVal as string;
+  if (typeof window !== 'undefined') {
+    const w = (window as any);
+    return w.__ENV?.[key] || w.ENV?.[key] || w[key];
+  }
+  return undefined;
+};
+
+const supabaseUrl = fromEnv('VITE_SUPABASE_URL') || fromEnv('SUPABASE_URL');
+const supabaseKey = fromEnv('VITE_SUPABASE_ANON_KEY') || fromEnv('SUPABASE_ANON_KEY');
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.warn('Supabase environment variables not found yet. Ensure Supabase is connected.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = (supabaseUrl && supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey)
+  : (undefined as unknown as ReturnType<typeof createClient>);
 
 // Database Types
 export interface Database {
