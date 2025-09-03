@@ -25,6 +25,18 @@ interface Vendor {
   created_at: string
 }
 
+interface PurchaseOrder {
+  id: string
+  po_number: string
+  vendor_name: string
+  description: string
+  amount: number
+  currency: string
+  expected_date: string
+  status: 'draft' | 'approved' | 'ordered' | 'received'
+  attachment?: string // object URL for demo preview
+}
+
 export default function ProcurementDashboard() {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
