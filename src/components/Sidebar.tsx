@@ -15,7 +15,8 @@ import {
   Target,
   Phone,
   Mail,
-  Package
+  Package,
+  User
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,12 @@ const navigationItems = [
     href: "/analytics",
     icon: BarChart3,
     role: ["admin", "manager"]
+  },
+  {
+    title: "Employee Portal",
+    href: "/employee",
+    icon: User,
+    role: ["admin", "manager", "executive", "accountant", "hr", "procurement", "dispatch"]
   },
   {
     title: "Settings",

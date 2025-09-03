@@ -27,28 +27,28 @@ const Index = () => {
           title="Total Revenue"
           value="₹2.4Cr"
           change={{ value: "+12.5% from last month", trend: "up" }}
-          icon={<DollarSign className="h-4 w-4" />}
+          icon={DollarSign}
           variant="success"
         />
         <DashboardCard
           title="Active Leads"
           value="348"
           change={{ value: "+5.2% from last week", trend: "up" }}
-          icon={<Users className="h-4 w-4" />}
+          icon={Users}
           variant="info"
         />
         <DashboardCard
           title="Orders Pending"
           value="23"
           change={{ value: "-2 from yesterday", trend: "down" }}
-          icon={<ShoppingCart className="h-4 w-4" />}
+          icon={ShoppingCart}
           variant="warning"
         />
         <DashboardCard
           title="Conversion Rate"
           value="24.3%"
           change={{ value: "+1.2% from last month", trend: "up" }}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={TrendingUp}
           variant="success"
         />
       </div>

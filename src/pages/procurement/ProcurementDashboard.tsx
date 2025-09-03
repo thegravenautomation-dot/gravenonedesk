@@ -21,6 +21,7 @@ interface Vendor {
   phone: string
   category: string
   status: string
+  payment_terms?: string
   created_at: string
 }
 

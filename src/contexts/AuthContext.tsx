@@ -9,6 +9,10 @@ interface Profile {
   role: 'admin' | 'manager' | 'executive' | 'accountant' | 'hr' | 'procurement' | 'dispatch'
   branch_id: string
   phone: string
+  employee_id?: string
+  department?: string
+  designation?: string
+  joining_date?: string
 }
 
 interface AuthContextType {

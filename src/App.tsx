@@ -12,6 +12,7 @@ import HRDashboard from "./pages/hr/HRDashboard";
 import ProcurementDashboard from "./pages/procurement/ProcurementDashboard";
 import DispatchDashboard from "./pages/dispatch/DispatchDashboard";
 import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
+import EmployeePortal from "./pages/employee/EmployeePortal";
 import NotFound from "./pages/NotFound";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/procurement" element={<ProtectedRoute><ProcurementDashboard /></ProtectedRoute>} />
             <Route path="/dispatch" element={<ProtectedRoute><DispatchDashboard /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
+            <Route path="/employee" element={<ProtectedRoute><EmployeePortal /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
