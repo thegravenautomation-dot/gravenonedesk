@@ -38,9 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.getItem('DEMO_MODE') === '1'
     )
 
+    console.log('AuthContext - Demo mode:', isDemo);
+
     if (isDemo) {
+      console.log('Setting up demo user');
       // Mock session for demo preview
-      setUser({} as User)
+      setUser({
+        id: 'demo-user',
+        email: 'demo@gravenautomation.com'
+      } as User)
       setProfile({
         id: 'demo-user',
         email: 'demo@gravenautomation.com',

@@ -73,9 +73,21 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
-            <div className="pt-2">
-              <Button type="button" variant="outline" className="w-full" onClick={() => { localStorage.setItem('DEMO_MODE','1'); window.location.href = '/'; }}>
-                Preview in Demo Mode
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground text-center mb-3">
+                Want to preview the dashboard features?
+              </p>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="w-full" 
+                onClick={() => { 
+                  localStorage.setItem('DEMO_MODE','1'); 
+                  console.log('Demo mode activated, redirecting to dashboard'); 
+                  window.location.href = '/'; 
+                }}
+              >
+                🚀 Preview in Demo Mode
               </Button>
             </div>
           </form>
