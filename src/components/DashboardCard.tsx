@@ -9,9 +9,9 @@ interface DashboardCardProps {
     value: string;
     trend: "up" | "down" | "neutral";
   };
-  icon?: ReactNode;
+  icon?: React.ComponentType<any>;
   className?: string;
-  variant?: "default" | "success" | "warning" | "danger" | "info";
+  variant?: "default" | "success" | "warning" | "danger" | "info" | "blue" | "green" | "purple" | "orange" | "red";
 }
 
 const variantStyles = {
@@ -19,7 +19,12 @@ const variantStyles = {
   success: "border-success/20 bg-success/5",
   warning: "border-warning/20 bg-warning/5", 
   danger: "border-destructive/20 bg-destructive/5",
-  info: "border-info/20 bg-info/5"
+  info: "border-info/20 bg-info/5",
+  blue: "border-primary/20 bg-primary/5",
+  green: "border-green-200 bg-green-50",
+  purple: "border-purple-200 bg-purple-50",
+  orange: "border-orange-200 bg-orange-50",
+  red: "border-red-200 bg-red-50",
 };
 
 const iconStyles = {
@@ -45,8 +50,8 @@ export function DashboardCard({
           {title}
         </CardTitle>
         {icon && (
-          <div className={cn("h-4 w-4", iconStyles[variant])}>
-            {icon}
+          <div className={cn("h-4 w-4", iconStyles[variant || 'default'])}>
+            {React.createElement(icon, { className: 'h-4 w-4' })}
           </div>
         )}
       </CardHeader>
