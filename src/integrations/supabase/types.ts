@@ -774,7 +774,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_employee_data: {
+        Args: { _employee_branch_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_hr_or_admin: {
         Args: { _user_id: string }
         Returns: boolean
       }
