@@ -57,7 +57,7 @@ export default function Auth() {
     setError(null);
 
     // Only allow specific admin and HR emails
-    const allowedEmails = ['admin@gravenautomation.com', 'hr@gravenautomation.com'];
+    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com'];
     if (!allowedEmails.includes(signupForm.email)) {
       setError('Signup is restricted to authorized personnel only. Contact your administrator.');
       setLoading(false);
@@ -72,9 +72,9 @@ export default function Auth() {
 
     try {
       // Determine role based on email
-      const role = signupForm.email === 'admin@gravenautomation.com' ? 'admin' : 'hr';
-      const department = signupForm.email === 'admin@gravenautomation.com' ? 'Administration' : 'Human Resources';
-      const designation = signupForm.email === 'admin@gravenautomation.com' ? 'System Administrator' : 'HR Manager';
+      const role = signupForm.email === 'info@gravenautomation.com' ? 'admin' : 'hr';
+      const department = signupForm.email === 'info@gravenautomation.com' ? 'Administration' : 'Human Resources';
+      const designation = signupForm.email === 'info@gravenautomation.com' ? 'System Administrator' : 'HR Manager';
 
       await signUp(signupForm.email, signupForm.password, {
         full_name: signupForm.full_name,
@@ -172,7 +172,7 @@ export default function Auth() {
                   <p className="text-sm text-blue-800 text-center">
                     Initial setup for Admin and HR accounts only.
                     <br />
-                    <strong>Allowed emails:</strong> admin@gravenautomation.com, hr@gravenautomation.com
+                    <strong>Allowed emails:</strong> info@gravenautomation.com, hr@gravenautomation.com
                   </p>
                 </div>
                 
@@ -196,7 +196,7 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="admin@gravenautomation.com or hr@gravenautomation.com"
+                      placeholder="info@gravenautomation.com or hr@gravenautomation.com"
                       value={signupForm.email}
                       onChange={(e) =>
                         setSignupForm({ ...signupForm, email: e.target.value })
