@@ -72,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.UNIQUE_QUERY_ID,
           raw_data: leadData,
           branch_id: branchId,
-          lead_source_id: leadSource.id,
+           lead_source_id: leadSourceId,
           status: 'new'
         };
         
@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.inquiry_id,
           raw_data: leadData,
           branch_id: branchId,
-          lead_source_id: leadSource.id,
+           lead_source_id: leadSourceId,
           status: 'new'
         };
         break;
@@ -131,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.wa_id,
           raw_data: leadData,
           branch_id: branchId,
-          lead_source_id: leadSource.id,
+           lead_source_id: leadSourceId,
           status: 'new'
         };
         break;
@@ -143,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
           source: source,
           raw_data: leadData,
           branch_id: branchId,
-          lead_source_id: leadSource.id,
+           lead_source_id: leadSourceId,
           status: 'new'
         };
     }

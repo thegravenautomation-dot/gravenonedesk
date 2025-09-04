@@ -315,7 +315,7 @@ export function LeadManagement() {
 
       toast({
         title: "Success",
-        description: `IndiaMART sync completed. ${data.new || 0} new leads captured.`,
+        description: `IndiaMART sync completed. ${data?.new || 0} new leads captured.`,
       });
 
       fetchLeads();
@@ -326,6 +326,21 @@ export function LeadManagement() {
         description: error.message || "Failed to sync IndiaMART leads",
         variant: "destructive",
       });
+    } finally {
+      setIsSyncingLeads(false);
+    }
+  };
+
+  const handleSyncTradeIndia = async () => {
+    try {
+      setIsSyncingLeads(true);
+      const { data, error } = await supabase.functions.invoke('tradeindia-sync', { body: {} });
+      if (error) throw error;
+      toast({ title: 'Success', description: `TradeIndia sync completed. ${data?.new || 0} new leads.` });
+      fetchLeads();
+    } catch (error: any) {
+      console.error('Error syncing TradeIndia:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to sync TradeIndia leads', variant: 'destructive' });
     } finally {
       setIsSyncingLeads(false);
     }
@@ -431,6 +446,15 @@ export function LeadManagement() {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
             Sync IndiaMART
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleSyncTradeIndia}
+            disabled={isSyncingLeads}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
+            Sync TradeIndia
           </Button>
 
           <Dialog open={isAssignmentRulesOpen} onOpenChange={setIsAssignmentRulesOpen}>
