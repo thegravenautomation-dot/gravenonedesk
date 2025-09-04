@@ -149,7 +149,7 @@ export default function AdminDashboard() {
 
         {/* Module Access Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/sales', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">{stats.totalLeads} Active Leads</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/sales', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/accounts', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">₹{(stats.totalRevenue / 100000).toFixed(1)}L Revenue</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/accounts', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/hr', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-600" />
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">{stats.totalEmployees} Employees</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/hr', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/procurement', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5 text-orange-600" />
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">2 Active POs</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/procurement', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -233,7 +233,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/dispatch', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-purple-600" />
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">{stats.pendingOrders} Pending</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/dispatch', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.open('/analytics', '_self')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-indigo-600" />
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <Badge variant="secondary">Live Data</Badge>
-                <Button size="sm">
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); window.open('/analytics', '_self'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
                 </Button>
@@ -289,15 +289,15 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="justify-start">
+              <Button variant="outline" className="justify-start" onClick={() => window.open('/hr', '_self')}>
                 <Users className="h-4 w-4 mr-2" />
                 User Management
               </Button>
-              <Button variant="outline" className="justify-start">
+              <Button variant="outline" className="justify-start" onClick={() => alert('Branch Settings - Coming Soon!')}>
                 <Building2 className="h-4 w-4 mr-2" />
                 Branch Settings
               </Button>
-              <Button variant="outline" className="justify-start">
+              <Button variant="outline" className="justify-start" onClick={() => window.open('https://supabase.com/dashboard/project/xiqumuqtzejtiinezryu/functions', '_blank')}>
                 <FileText className="h-4 w-4 mr-2" />
                 System Logs
               </Button>
