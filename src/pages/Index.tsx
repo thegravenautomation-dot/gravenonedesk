@@ -1,205 +1,244 @@
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { DashboardCard } from "@/components/DashboardCard";
-import { RevenueChart } from "@/components/charts/RevenueChart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
+  ArrowRight, 
+  Building2, 
   Users, 
-  DollarSign, 
-  ShoppingCart, 
-  TrendingUp,
-  Target,
-  Clock,
+  TrendingUp, 
+  Shield, 
+  Zap, 
+  Globe,
   CheckCircle,
-  AlertCircle
+  Star
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Logo } from "@/components/Logo";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const Index = () => {
+export default function Index() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  const features = [
+    {
+      icon: TrendingUp,
+      title: "Sales Management",
+      description: "Complete lead-to-cash pipeline with automated workflows"
+    },
+    {
+      icon: Users,
+      title: "Human Resources",
+      description: "Employee management, payroll, and performance tracking"
+    },
+    {
+      icon: Building2,
+      title: "Multi-Branch Operations",
+      description: "Centralized control with branch-specific access and reporting"
+    },
+    {
+      icon: Shield,
+      title: "Role-Based Security",
+      description: "Granular permissions and data security across all modules"
+    },
+    {
+      icon: Zap,
+      title: "Real-Time Analytics",
+      description: "Live dashboards and business intelligence insights"
+    },
+    {
+      icon: Globe,
+      title: "GST & Compliance",
+      description: "Automated GST calculations and e-invoice generation"
+    }
+  ];
+
+  const modules = [
+    "Sales Dashboard",
+    "Accounts & Finance",
+    "Human Resources",
+    "Procurement Management",
+    "Dispatch & Logistics",
+    "Employee Self-Service",
+    "Analytics & Reports",
+    "Admin Panel"
+  ];
+
   return (
-    <DashboardLayout 
-      title="Admin Dashboard" 
-      subtitle="Welcome back! Here's what's happening at Graven Automation."
-    >
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <DashboardCard
-          title="Total Revenue"
-          value="₹2.4Cr"
-          change={{ value: "+12.5% from last month", trend: "up" }}
-          icon={DollarSign}
-          variant="success"
-        />
-        <DashboardCard
-          title="Active Leads"
-          value="348"
-          change={{ value: "+5.2% from last week", trend: "up" }}
-          icon={Users}
-          variant="info"
-        />
-        <DashboardCard
-          title="Orders Pending"
-          value="23"
-          change={{ value: "-2 from yesterday", trend: "down" }}
-          icon={ShoppingCart}
-          variant="warning"
-        />
-        <DashboardCard
-          title="Conversion Rate"
-          value="24.3%"
-          change={{ value: "+1.2% from last month", trend: "up" }}
-          icon={TrendingUp}
-          variant="success"
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Logo />
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Graven Automation</h1>
+              <p className="text-sm text-muted-foreground">Business Management Platform</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link to="/auth">
+              <Button variant="outline">Sign In</Button>
+            </Link>
+            <Link to="/auth">
+              <Button>Get Started <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Revenue Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Revenue Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RevenueChart />
-          </CardContent>
-        </Card>
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center space-y-8">
+          <Badge variant="secondary" className="mb-4">
+            <Star className="w-3 h-3 mr-1" />
+            Complete B2B Management Solution
+          </Badge>
+          
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight">
+            Streamline Your
+            <span className="text-primary block">Business Operations</span>
+          </h1>
+          
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Comprehensive business management platform designed for Graven Automation. 
+            Manage sales, HR, accounts, procurement, and dispatch from a single unified dashboard.
+          </p>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start" variant="outline">
-              <Target className="mr-2 h-4 w-4" />
-              Create New Lead
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/auth">
+              <Button size="lg" className="w-full sm:w-auto">
+                Access Platform <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              View Demo
             </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Generate Invoice
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Add Purchase Order
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Users className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Recent Activities */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-4 w-4 text-success mt-1" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Order #12345 dispatched</p>
-                <p className="text-xs text-muted-foreground">2 hours ago</p>
-              </div>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto mt-16">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">8+</div>
+              <div className="text-sm text-muted-foreground">Integrated Modules</div>
             </div>
-            <div className="flex items-start gap-3">
-              <DollarSign className="h-4 w-4 text-info mt-1" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Payment received ₹50,000</p>
-                <p className="text-xs text-muted-foreground">4 hours ago</p>
-              </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">3</div>
+              <div className="text-sm text-muted-foreground">Branch Locations</div>
             </div>
-            <div className="flex items-start gap-3">
-              <Users className="h-4 w-4 text-primary mt-1" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">New lead from IndiaMART</p>
-                <p className="text-xs text-muted-foreground">6 hours ago</p>
-              </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">100%</div>
+              <div className="text-sm text-muted-foreground">Role-Based Access</div>
             </div>
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-4 w-4 text-warning mt-1" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Stock running low: Servo Motors</p>
-                <p className="text-xs text-muted-foreground">1 day ago</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </section>
 
-        {/* Pending Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Pending Tasks
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium">Approve salary advance</p>
-                <p className="text-xs text-muted-foreground">HR Department</p>
-              </div>
-              <Badge variant="outline">High</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium">Review quotation #QT-2024-156</p>
-                <p className="text-xs text-muted-foreground">Sales Team</p>
-              </div>
-              <Badge variant="outline">Medium</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium">Update vendor details</p>
-                <p className="text-xs text-muted-foreground">Procurement</p>
-              </div>
-              <Badge variant="outline">Low</Badge>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-background/50">
+        <div className="container mx-auto">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              Everything You Need to Manage Your Business
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Powerful features designed specifically for automation companies and B2B operations
+            </p>
+          </div>
 
-        {/* Branch Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Branch Performance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Mumbai HQ</span>
-                <span className="font-medium">₹85L</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader>
+                  <feature.icon className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">
+                    {feature.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Modules Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              Comprehensive Module Suite
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              All essential business functions in one integrated platform
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {modules.map((module, index) => (
+              <div key={index} className="flex items-center space-x-2 p-4 rounded-lg bg-background border">
+                <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm font-medium">{module}</span>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-primary h-2 rounded-full" style={{ width: '85%' }}></div>
-              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link to="/auth">
+              <Button size="lg">
+                Start Managing Your Business <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-background/80 py-12 px-4">
+        <div className="container mx-auto text-center space-y-4">
+          <div className="flex items-center justify-center space-x-4">
+            <Logo />
+            <div>
+              <h3 className="text-lg font-semibold">Graven Automation Pvt. Ltd.</h3>
+              <p className="text-sm text-muted-foreground">Business Management Platform</p>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Delhi Branch</span>
-                <span className="font-medium">₹62L</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-secondary h-2 rounded-full" style={{ width: '62%' }}></div>
-              </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto text-sm text-muted-foreground">
+            <div>
+              <strong>Mumbai Head Office</strong><br />
+              Business Park, Andheri East<br />
+              Mumbai, Maharashtra 400069
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Bangalore Branch</span>
-                <span className="font-medium">₹45L</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-info h-2 rounded-full" style={{ width: '45%' }}></div>
-              </div>
+            <div>
+              <strong>Delhi Branch</strong><br />
+              Corporate Plaza, CP<br />
+              Delhi 110001
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+            <div>
+              <strong>Bangalore Branch</strong><br />
+              Tech Hub, Whitefield<br />
+              Bangalore, Karnataka 560066
+            </div>
+          </div>
+
+          <div className="pt-8 border-t">
+            <p className="text-sm text-muted-foreground">
+              © 2025 Graven Automation Pvt. Ltd. All rights reserved. | Built with ❤️ using open-source technologies
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
-};
-
-export default Index;
+}

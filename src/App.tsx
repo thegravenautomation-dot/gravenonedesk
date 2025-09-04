@@ -1,19 +1,25 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import SalesDashboard from "./pages/sales/SalesDashboard";
-import AccountsDashboard from "./pages/accounts/AccountsDashboard";
-import HRDashboard from "./pages/hr/HRDashboard";
-import ProcurementDashboard from "./pages/procurement/ProcurementDashboard";
-import DispatchDashboard from "./pages/dispatch/DispatchDashboard";
-import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
-import EmployeePortal from "./pages/employee/EmployeePortal";
-import NotFound from "./pages/NotFound";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Pages
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import NotFound from "@/pages/NotFound";
+
+// Dashboard Pages
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import SalesDashboard from "@/pages/sales/SalesDashboard";
+import AccountsDashboard from "@/pages/accounts/AccountsDashboard";
+import HRDashboard from "@/pages/hr/HRDashboard";
+import ProcurementDashboard from "@/pages/procurement/ProcurementDashboard";
+import DispatchDashboard from "@/pages/dispatch/DispatchDashboard";
+import EmployeePortal from "@/pages/employee/EmployeePortal";
+
+import { useAuth } from "@/contexts/AuthContext";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
