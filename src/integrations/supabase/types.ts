@@ -14,7 +14,761 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendance: {
+        Row: {
+          branch_id: string | null
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          date: string
+          employee_id: string | null
+          id: string
+          status: Database["public"]["Enums"]["attendance_status"] | null
+          working_hours: number | null
+        }
+        Insert: {
+          branch_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date: string
+          employee_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["attendance_status"] | null
+          working_hours?: number | null
+        }
+        Update: {
+          branch_id?: string | null
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date?: string
+          employee_id?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["attendance_status"] | null
+          working_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branches: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          manager_id: string | null
+          name: string
+          phone: string | null
+          pincode: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name: string
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name?: string
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          address: string | null
+          branch_id: string | null
+          city: string | null
+          company: string | null
+          created_at: string | null
+          created_by: string | null
+          credit_limit: number | null
+          email: string | null
+          gstin: string | null
+          id: string
+          name: string
+          pan: string | null
+          phone: string | null
+          pincode: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit_limit?: number | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name: string
+          pan?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          credit_limit?: number | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name?: string
+          pan?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          aadhaar: string | null
+          address: string | null
+          allowances: number | null
+          bank_account: string | null
+          basic_salary: number | null
+          branch_id: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          department: string | null
+          designation: string | null
+          email: string | null
+          employee_id: string
+          full_name: string
+          hra: number | null
+          id: string
+          ifsc_code: string | null
+          joining_date: string | null
+          pan: string | null
+          phone: string | null
+          profile_id: string | null
+          reporting_manager: string | null
+          status: Database["public"]["Enums"]["employee_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          aadhaar?: string | null
+          address?: string | null
+          allowances?: number | null
+          bank_account?: string | null
+          basic_salary?: number | null
+          branch_id?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          employee_id: string
+          full_name: string
+          hra?: number | null
+          id?: string
+          ifsc_code?: string | null
+          joining_date?: string | null
+          pan?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          reporting_manager?: string | null
+          status?: Database["public"]["Enums"]["employee_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          aadhaar?: string | null
+          address?: string | null
+          allowances?: number | null
+          bank_account?: string | null
+          basic_salary?: number | null
+          branch_id?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          employee_id?: string
+          full_name?: string
+          hra?: number | null
+          id?: string
+          ifsc_code?: string | null
+          joining_date?: string | null
+          pan?: string | null
+          phone?: string | null
+          profile_id?: string | null
+          reporting_manager?: string | null
+          status?: Database["public"]["Enums"]["employee_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_reporting_manager_fkey"
+            columns: ["reporting_manager"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          customer_id: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string | null
+          invoice_no: string
+          order_id: string | null
+          paid_amount: number | null
+          payment_status: Database["public"]["Enums"]["payment_status"] | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_no: string
+          order_id?: string | null
+          paid_amount?: number | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_no?: string
+          order_id?: string | null
+          paid_amount?: number | null
+          payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string | null
+          created_at: string | null
+          customer_id: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          lead_no: string
+          probability: number | null
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          title: string
+          updated_at: string | null
+          value: number | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_no: string
+          probability?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          title: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_no?: string
+          probability?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"] | null
+          title?: string
+          updated_at?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          customer_id: string | null
+          delivery_date: string | null
+          id: string
+          order_date: string | null
+          order_no: string
+          quotation_id: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_date?: string | null
+          id?: string
+          order_date?: string | null
+          order_no: string
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_date?: string | null
+          id?: string
+          order_date?: string | null
+          order_no?: string
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          department: string | null
+          designation: string | null
+          email: string
+          employee_id: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          joining_date: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email: string
+          employee_id?: string | null
+          full_name: string
+          id: string
+          is_active?: boolean | null
+          joining_date?: string | null
+          phone?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string
+          employee_id?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          joining_date?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          created_by: string | null
+          delivery_date: string | null
+          id: string
+          po_date: string | null
+          po_no: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          po_date?: string | null
+          po_no: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          po_date?: string | null
+          po_no?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          lead_id: string | null
+          quotation_no: string
+          status: Database["public"]["Enums"]["quotation_status"] | null
+          subtotal: number | null
+          tax_amount: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string | null
+          valid_till: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          lead_id?: string | null
+          quotation_no: string
+          status?: Database["public"]["Enums"]["quotation_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          valid_till?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          lead_id?: string | null
+          quotation_no?: string
+          status?: Database["public"]["Enums"]["quotation_status"] | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+          valid_till?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          branch_id: string | null
+          city: string | null
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          gstin: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          pan: string | null
+          payment_terms: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          pan?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string | null
+          city?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          pan?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +777,33 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      attendance_status: "present" | "absent" | "half_day" | "late"
+      employee_status: "active" | "inactive" | "terminated"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "proposal"
+        | "negotiation"
+        | "won"
+        | "lost"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+      payment_status: "pending" | "partial" | "paid" | "overdue"
+      quotation_status: "draft" | "sent" | "approved" | "rejected" | "converted"
+      user_role:
+        | "admin"
+        | "manager"
+        | "executive"
+        | "accountant"
+        | "hr"
+        | "procurement"
+        | "dispatch"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +930,37 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      attendance_status: ["present", "absent", "half_day", "late"],
+      employee_status: ["active", "inactive", "terminated"],
+      lead_status: [
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "negotiation",
+        "won",
+        "lost",
+      ],
+      order_status: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+      payment_status: ["pending", "partial", "paid", "overdue"],
+      quotation_status: ["draft", "sent", "approved", "rejected", "converted"],
+      user_role: [
+        "admin",
+        "manager",
+        "executive",
+        "accountant",
+        "hr",
+        "procurement",
+        "dispatch",
+      ],
+    },
   },
 } as const
