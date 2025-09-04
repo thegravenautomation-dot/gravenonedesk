@@ -87,31 +87,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email, 
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        data: userData // Pass user data as metadata to trigger
       }
     })
     if (error) throw error
-
-    if (data.user && userData.full_name && userData.role && userData.branch_id) {
-      // Create profile with required fields
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            email,
-            full_name: userData.full_name,
-            role: userData.role,
-            branch_id: userData.branch_id,
-            phone: userData.phone || null,
-            employee_id: userData.employee_id || null,
-            department: userData.department || null,
-            designation: userData.designation || null,
-            joining_date: userData.joining_date || null,
-          },
-        ])
-      if (profileError) throw profileError
-    }
   }
 
   const signOut = async () => {
