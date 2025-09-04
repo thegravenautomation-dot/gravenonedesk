@@ -185,6 +185,51 @@ export type Database = {
           },
         ]
       }
+      employee_queries: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string
+          category: string
+          created_at: string
+          description: string
+          employee_id: string
+          id: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id: string
+          category?: string
+          created_at?: string
+          description: string
+          employee_id: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string
+          category?: string
+          created_at?: string
+          description?: string
+          employee_id?: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           aadhaar: string | null
@@ -358,6 +403,75 @@ export type Database = {
           },
         ]
       }
+      lead_assignment_rules: {
+        Row: {
+          assigned_to: string
+          branch_id: string
+          conditions: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to: string
+          branch_id: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string
+          branch_id?: string
+          conditions?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_sources: {
+        Row: {
+          api_config: Json | null
+          branch_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          api_config?: Json | null
+          branch_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          source_type: string
+          updated_at?: string
+        }
+        Update: {
+          api_config?: Json | null
+          branch_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -366,9 +480,12 @@ export type Database = {
           customer_id: string | null
           description: string | null
           expected_close_date: string | null
+          external_id: string | null
           id: string
           lead_no: string
+          lead_source_id: string | null
           probability: number | null
+          raw_data: Json | null
           source: string | null
           status: Database["public"]["Enums"]["lead_status"] | null
           title: string
@@ -382,9 +499,12 @@ export type Database = {
           customer_id?: string | null
           description?: string | null
           expected_close_date?: string | null
+          external_id?: string | null
           id?: string
           lead_no: string
+          lead_source_id?: string | null
           probability?: number | null
+          raw_data?: Json | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           title: string
@@ -398,9 +518,12 @@ export type Database = {
           customer_id?: string | null
           description?: string | null
           expected_close_date?: string | null
+          external_id?: string | null
           id?: string
           lead_no?: string
+          lead_source_id?: string | null
           probability?: number | null
+          raw_data?: Json | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           title?: string
@@ -427,6 +550,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_lead_source_id_fkey"
+            columns: ["lead_source_id"]
+            isOneToOne: false
+            referencedRelation: "lead_sources"
             referencedColumns: ["id"]
           },
         ]
