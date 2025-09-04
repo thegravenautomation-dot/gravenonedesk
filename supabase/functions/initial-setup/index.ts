@@ -82,10 +82,14 @@ const handler = async (req: Request): Promise<Response> => {
     for (const account of accounts) {
       console.log(`Creating account for ${account.email}...`);
       
-      // Check if user already exists
-      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(account.email);
+      // Check if user already exists (v2: no getUserByEmail)
+      const { data: usersPage, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (listErr) {
+        console.error('Error listing users:', listErr);
+      }
+      const existing = usersPage?.users?.find((u: any) => (u.email || '').toLowerCase() === account.email.toLowerCase());
       
-      if (existingUser.user) {
+      if (existing) {
         console.log(`User ${account.email} already exists, skipping...`);
         results.push({ email: account.email, status: 'already_exists' });
         continue;

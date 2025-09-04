@@ -29,12 +29,24 @@ export default function Dashboard() {
     );
   }
 
-  if (!user || !profile) {
+  // Determine role from profile or user metadata
+  const role = (profile?.role as string) || (user?.user_metadata?.role as string);
+  if (!user) {
     return null;
+  }
+  if (!role) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Setting up your profile… please try again in a moment or contact admin.</p>
+        </div>
+      </div>
+    );
   }
 
   // Route to appropriate dashboard based on role
-  switch (profile.role) {
+  switch (role) {
     case 'admin':
       return <AdminDashboard />;
     case 'manager':

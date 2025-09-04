@@ -70,8 +70,8 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const { profile } = useAuth();
-  const currentUserRole = profile?.role || "admin";
+  const { profile, user } = useAuth();
+  const currentUserRole = (profile?.role as string) || (user?.user_metadata?.role as string) || "executive";
 
   const hasAccess = (roles: string[]) => {
     return roles.includes(currentUserRole);
