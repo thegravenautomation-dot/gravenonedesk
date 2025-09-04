@@ -72,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.UNIQUE_QUERY_ID,
           raw_data: leadData,
           branch_id: branchId,
-           lead_source_id: leadSourceId,
+           lead_source_id: leadSource.id,
           status: 'new'
         };
         
@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.inquiry_id,
           raw_data: leadData,
           branch_id: branchId,
-           lead_source_id: leadSourceId,
+           lead_source_id: leadSource.id,
           status: 'new'
         };
         break;
@@ -131,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
           external_id: leadData.wa_id,
           raw_data: leadData,
           branch_id: branchId,
-           lead_source_id: leadSourceId,
+           lead_source_id: leadSource.id,
           status: 'new'
         };
         break;
@@ -143,18 +143,21 @@ const handler = async (req: Request): Promise<Response> => {
           source: source,
           raw_data: leadData,
           branch_id: branchId,
-           lead_source_id: leadSourceId,
+           lead_source_id: leadSource.id,
           status: 'new'
         };
     }
 
-    // Generate lead number
-    const leadCount = await supabase
-      .from('leads')
-      .select('id', { count: 'exact', head: true })
-      .eq('branch_id', branchId);
-
-    const leadNumber = `LD${String((leadCount.count || 0) + 1).padStart(3, '0')}`;
+    // Generate a collision-resistant lead number (timestamp + random)
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const rand = Math.floor(100 + Math.random() * 900); // 3 digits
+    const leadNumber = `LD-${y}${m}${d}${hh}${mm}${ss}-${rand}`;
     processedLead.lead_no = leadNumber;
 
     // Insert the lead
