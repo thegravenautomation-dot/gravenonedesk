@@ -35,17 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    // Listen for auth changes
+    // Listen for auth changes first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, session?.user?.email)
       setUser(session?.user ?? null)
       if (session?.user) {
         setTimeout(() => {
@@ -53,6 +45,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 0)
       } else {
         setProfile(null)
+      }
+      setLoading(false)
+    })
+
+    // Then get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        fetchProfile(session.user.id)
       }
       setLoading(false)
     })
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, userData: Partial<Profile>) => {
-    const redirectUrl = `${window.location.origin}/`
+    const redirectUrl = `${window.location.origin}/auth`
     
     const { data, error } = await supabase.auth.signUp({ 
       email, 

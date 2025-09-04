@@ -16,6 +16,7 @@ export default function Auth() {
   const { signIn, signUp, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -23,6 +24,19 @@ export default function Auth() {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  // Check for success messages from URL params (email confirmation)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const accessToken = urlParams.get('access_token');
+    
+    if (type === 'signup' && accessToken) {
+      setSuccess('Email confirmed successfully! You can now sign in.');
+      // Clear URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -40,12 +54,14 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       await signIn(loginForm.email, loginForm.password);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
+      setSuccess(null);
     } finally {
       setLoading(false);
     }
@@ -55,6 +71,7 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     // Only allow specific admin and HR emails
     const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com'];
@@ -86,6 +103,7 @@ export default function Auth() {
         employee_id: role === 'admin' ? 'ADM001' : 'HR001',
       });
       setError("Check your email to confirm your account!");
+      setSuccess("Registration successful! Check your email to confirm your account.");
     } catch (err: any) {
       if (err.message?.includes('rate_limit') || err.message?.includes('51 seconds') || err.message?.includes('429')) {
         setError('Too many signup attempts. Please wait a minute before trying again.');
@@ -147,9 +165,9 @@ export default function Auth() {
                       required
                     />
                   </div>
-                  {error && (
-                    <Alert variant={error.includes("Check your email") ? "default" : "destructive"}>
-                      <AlertDescription>{error}</AlertDescription>
+                  {(error || success) && (
+                    <Alert variant={error ? "destructive" : success?.includes("Check your email") ? "default" : "default"}>
+                      <AlertDescription>{error || success}</AlertDescription>
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={loading}>
@@ -231,9 +249,9 @@ export default function Auth() {
                     />
                   </div>
 
-                  {error && (
-                    <Alert variant={error.includes("Check your email") ? "default" : "destructive"}>
-                      <AlertDescription>{error}</AlertDescription>
+                  {(error || success) && (
+                    <Alert variant={error ? "destructive" : success?.includes("Check your email") ? "default" : "default"}>
+                      <AlertDescription>{error || success}</AlertDescription>
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={loading}>
