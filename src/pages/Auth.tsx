@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -113,6 +114,30 @@ export default function Auth() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendVerification = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    const email = signupForm.email.trim();
+    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com'];
+    if (!email || !allowedEmails.includes(email)) {
+      setError('Enter an allowed email to resend verification.');
+      setLoading(false);
+      return;
+    }
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth` }
+    });
+    if (error) {
+      setError(error.message || 'Could not resend verification email.');
+    } else {
+      setSuccess('Verification email resent. Please check your inbox/spam.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -258,6 +283,11 @@ export default function Auth() {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Initial Account
                   </Button>
+                  <div className="text-center">
+                    <Button type="button" variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading || !signupForm.email}>
+                      Didn't get it? Resend verification email
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
             </Tabs>
