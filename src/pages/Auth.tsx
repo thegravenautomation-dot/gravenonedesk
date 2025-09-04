@@ -75,7 +75,7 @@ export default function Auth() {
     setSuccess(null);
 
     // Only allow specific admin and HR emails
-    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com'];
+    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com', 'the.gravenautomation@gmail.com'];
     if (!allowedEmails.includes(signupForm.email)) {
       setError('Signup is restricted to authorized personnel only. Contact your administrator.');
       setLoading(false);
@@ -89,10 +89,13 @@ export default function Auth() {
     }
 
     try {
-      // Determine role based on email
-      const role = signupForm.email === 'info@gravenautomation.com' ? 'admin' : 'hr';
-      const department = signupForm.email === 'info@gravenautomation.com' ? 'Administration' : 'Human Resources';
-      const designation = signupForm.email === 'info@gravenautomation.com' ? 'System Administrator' : 'HR Manager';
+      // Determine role based on email - admin emails for Graven Automation
+      const adminEmails = ['info@gravenautomation.com', 'the.gravenautomation@gmail.com'];
+      const isAdmin = adminEmails.includes(signupForm.email);
+      
+      const role = isAdmin ? 'admin' : 'hr';
+      const department = isAdmin ? 'Administration' : 'Human Resources';
+      const designation = isAdmin ? 'System Administrator' : 'HR Manager';
 
       await signUp(signupForm.email, signupForm.password, {
         full_name: signupForm.full_name,
@@ -121,7 +124,7 @@ export default function Auth() {
     setError(null);
     setSuccess(null);
     const email = signupForm.email.trim();
-    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com'];
+    const allowedEmails = ['info@gravenautomation.com', 'hr@gravenautomation.com', 'the.gravenautomation@gmail.com'];
     if (!email || !allowedEmails.includes(email)) {
       setError('Enter an allowed email to resend verification.');
       setLoading(false);
@@ -215,7 +218,7 @@ export default function Auth() {
                   <p className="text-sm text-blue-800 text-center">
                     Initial setup for Admin and HR accounts only.
                     <br />
-                    <strong>Allowed emails:</strong> info@gravenautomation.com, hr@gravenautomation.com
+                    <strong>Allowed emails:</strong> info@gravenautomation.com, hr@gravenautomation.com, the.gravenautomation@gmail.com
                   </p>
                 </div>
                 
@@ -239,7 +242,7 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="info@gravenautomation.com or hr@gravenautomation.com"
+                      placeholder="info@gravenautomation.com, hr@gravenautomation.com, or the.gravenautomation@gmail.com"
                       value={signupForm.email}
                       onChange={(e) =>
                         setSignupForm({ ...signupForm, email: e.target.value })
