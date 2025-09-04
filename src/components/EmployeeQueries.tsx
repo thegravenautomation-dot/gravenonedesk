@@ -24,7 +24,7 @@ interface EmployeeQuery {
   employee_id: string;
   profiles?: {
     full_name: string;
-  };
+  } | null;
 }
 
 export function EmployeeQueries() {
@@ -49,10 +49,7 @@ export function EmployeeQueries() {
     try {
       let query = supabase
         .from('employee_queries')
-        .select(`
-          *,
-          profiles (full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // If HR/Admin, show all queries in branch, else show own queries
@@ -65,7 +62,24 @@ export function EmployeeQueries() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setQueries(data || []);
+      
+      // Get employee names separately
+      const queriesWithNames = await Promise.all(
+        (data || []).map(async (query) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', query.employee_id)
+            .single();
+          
+          return {
+            ...query,
+            profiles: profileData
+          };
+        })
+      );
+      
+      setQueries(queriesWithNames);
     } catch (error) {
       console.error('Error fetching queries:', error);
       toast({
@@ -306,7 +320,7 @@ export function EmployeeQueries() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{query.profiles?.full_name}</TableCell>
+                  <TableCell>{query.profiles?.full_name || 'Unknown'}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
                       {query.category}
