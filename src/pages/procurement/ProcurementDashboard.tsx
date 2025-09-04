@@ -136,8 +136,8 @@ export default function ProcurementDashboard() {
   }
 
   const filteredVendors = vendors.filter(vendor =>
-    vendor.vendor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.contact_person.toLowerCase().includes(searchTerm.toLowerCase())
+    (vendor.vendor_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vendor.contact_person || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const getStatusColor = (status: string) => {
