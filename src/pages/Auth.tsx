@@ -143,6 +143,31 @@ export default function Auth() {
     setLoading(false);
   };
 
+  const handleInitialSetup = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await supabase.functions.invoke('initial-setup', {
+        body: { setupToken: 'graven_seed_2024_secure_token' }
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      const { data } = response;
+      console.log('Setup result:', data);
+      
+      setSuccess('Initial accounts created successfully! You can now login with the provided credentials.');
+    } catch (error: any) {
+      console.error('Setup error:', error);
+      setError(error.message || 'Failed to create initial accounts');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
@@ -286,11 +311,25 @@ export default function Auth() {
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Initial Account
                   </Button>
-                  <div className="text-center">
-                    <Button type="button" variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading || !signupForm.email}>
-                      Didn't get it? Resend verification email
-                    </Button>
-                  </div>
+                   <div className="space-y-2">
+                      <Button 
+                        onClick={handleInitialSetup}
+                        disabled={loading}
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
+                        {loading ? 'Setting up...' : 'Run Initial Setup'}
+                      </Button>
+                      
+                      <div className="text-center text-sm text-muted-foreground">
+                        OR
+                      </div>
+                      
+                      <div className="text-center">
+                        <Button type="button" variant="ghost" size="sm" onClick={handleResendVerification} disabled={loading || !signupForm.email}>
+                          Didn't get it? Resend verification email
+                        </Button>
+                      </div>
+                    </div>
                 </form>
               </TabsContent>
             </Tabs>
