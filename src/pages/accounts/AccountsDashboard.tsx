@@ -255,6 +255,99 @@ export default function AccountsDashboard() {
     });
   };
 
+  const formatCurrency = (val: number) => `₹${(val || 0).toLocaleString()}`;
+
+  const openPrint = (title: string, contentHTML: string) => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      toast({ title: 'Popup blocked', description: 'Please allow popups to print invoices.', variant: 'destructive' });
+      return;
+    }
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${title}</title>
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; color: #111827; }
+        header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #e5e7eb; padding-bottom:12px; margin-bottom:16px; }
+        h1 { font-size: 20px; margin: 0; }
+        .sub { color:#6b7280; font-size:12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { text-align:left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+        .right { text-align:right; }
+        .summary { margin-top: 16px; }
+        .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .page { page-break-after: always; }
+        @media print { .no-print { display:none; } }
+      </style>
+    </head><body onload="window.print()">${contentHTML}</body></html>`);
+    w.document.close();
+  };
+
+  const buildInvoiceHTML = (inv: Invoice) => {
+    return `
+      <section class="page">
+        <header>
+          <div>
+            <h1>Tax Invoice - ${inv.invoice_no}</h1>
+            <div class="sub">Invoice Date: ${new Date(inv.invoice_date).toLocaleDateString()}</div>
+          </div>
+          <div class="sub">
+            GSTIN: 07AAKCG1025G1ZX<br/>
+            Status: ${inv.payment_status?.toUpperCase()}
+          </div>
+        </header>
+        <div class="grid">
+          <div>
+            <strong>Bill To</strong><br/>
+            ${inv.customers?.name || 'Customer'}<br/>
+            ${inv.customers?.company ? inv.customers.company + '<br/>' : ''}
+            ${inv.customers?.gstin ? 'GSTIN: ' + inv.customers.gstin : ''}
+          </div>
+          <div class="right">
+            <strong>Invoice #</strong>: ${inv.invoice_no}<br/>
+            <strong>Due Date</strong>: ${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-'}
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="right">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Taxable Value</td>
+              <td class="right">${formatCurrency(Number(inv.subtotal))}</td>
+            </tr>
+            <tr>
+              <td>GST @ 18%</td>
+              <td class="right">${formatCurrency(Number(inv.tax_amount))}</td>
+            </tr>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td class="right"><strong>${formatCurrency(Number(inv.total_amount))}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="sub" style="margin-top:12px;">This is a system-generated invoice.</div>
+      </section>
+    `;
+  };
+
+  const printInvoice = (inv: Invoice) => {
+    openPrint(`Invoice ${inv.invoice_no}`, buildInvoiceHTML(inv));
+  };
+
+  const printInvoices = (list: Invoice[]) => {
+    if (!list || list.length === 0) {
+      toast({ title: 'No invoices to print', description: 'Adjust filters or create an invoice first.' });
+      return;
+    }
+    const html = list.map(buildInvoiceHTML).join('');
+    openPrint('Invoices', html);
+  };
+
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.invoice_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (invoice.customers?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -463,7 +556,7 @@ export default function AccountsDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => alert('Bulk Print - Coming Soon!')}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => printInvoices(filteredInvoices)}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Printer className="h-5 w-5 text-purple-600" />
@@ -541,7 +634,7 @@ export default function AccountsDashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" onClick={() => alert('Print Invoice - Coming Soon!')}>
+                        <Button size="sm" variant="outline" onClick={() => printInvoice(invoice)}>
                           <Printer className="h-3 w-3 mr-1" />
                           Print
                         </Button>
