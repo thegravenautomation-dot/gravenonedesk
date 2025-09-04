@@ -67,7 +67,7 @@ export default function HRDashboard() {
 
   useEffect(() => {
     fetchEmployees()
-  }, [])
+  }, [profile?.branch_id])
 
   const fetchEmployees = async () => {
     try {
