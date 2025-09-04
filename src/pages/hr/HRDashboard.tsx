@@ -97,14 +97,24 @@ export default function HRDashboard() {
 
       const { error } = await supabase.from('employees').insert([
         {
-          ...newEmployee,
+          full_name: newEmployee.full_name,
+          email: newEmployee.email,
+          phone: newEmployee.phone,
+          date_of_birth: newEmployee.date_of_birth || null,
+          joining_date: newEmployee.joining_date || null,
+          department: newEmployee.department || null,
+          designation: newEmployee.designation || null,
+          address: newEmployee.address || null,
+          basic_salary: newEmployee.basic_salary || 0,
+          hra: newEmployee.hra || 0,
+          allowances: newEmployee.allowances || 0,
           employee_id: employeeId,
           branch_id: profile?.branch_id,
           status: 'active',
-          pan_number: '',
-          aadhaar_number: '',
+          pan: '',
+          aadhaar: '',
           bank_account: '',
-          bank_ifsc: '',
+          ifsc_code: '',
         },
       ])
 
