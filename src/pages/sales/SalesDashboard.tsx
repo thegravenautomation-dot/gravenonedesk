@@ -114,8 +114,8 @@ export default function SalesDashboard() {
   }
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.contact_person.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (lead.company_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (lead.contact_person || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter
     return matchesSearch && matchesStatus
   })
