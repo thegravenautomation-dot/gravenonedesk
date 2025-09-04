@@ -431,6 +431,51 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          branch_id: string
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["leave_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id: string
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          reason?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["leave_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id?: string
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          reason?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["leave_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           branch_id: string | null
@@ -798,6 +843,14 @@ export type Database = {
         | "negotiation"
         | "won"
         | "lost"
+      leave_status: "pending" | "approved" | "rejected"
+      leave_type:
+        | "sick"
+        | "casual"
+        | "annual"
+        | "maternity"
+        | "paternity"
+        | "emergency"
       order_status:
         | "pending"
         | "confirmed"
@@ -952,6 +1005,15 @@ export const Constants = {
         "negotiation",
         "won",
         "lost",
+      ],
+      leave_status: ["pending", "approved", "rejected"],
+      leave_type: [
+        "sick",
+        "casual",
+        "annual",
+        "maternity",
+        "paternity",
+        "emergency",
       ],
       order_status: [
         "pending",

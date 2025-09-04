@@ -115,6 +115,7 @@ export default function EmployeePortal() {
         {
           ...newLeave,
           employee_id: profile?.id,
+          branch_id: profile?.branch_id,
           status: 'pending',
         },
       ])
