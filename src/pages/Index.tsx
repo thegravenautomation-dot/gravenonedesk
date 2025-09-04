@@ -80,7 +80,7 @@ export default function Index() {
           <div className="flex items-center space-x-4">
             <Logo />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Graven Automation</h1>
+              <h1 className="text-xl font-bold text-foreground">Graven OneDesk</h1>
               <p className="text-sm text-muted-foreground">Business Management Platform</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Index() {
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Comprehensive business management platform designed for Graven Automation. 
+            Comprehensive business management platform designed for Graven OneDesk. 
             Manage sales, HR, accounts, procurement, and dispatch from a single unified dashboard.
           </p>
 
@@ -209,7 +209,7 @@ export default function Index() {
           <div className="flex items-center justify-center space-x-4">
             <Logo />
             <div>
-              <h3 className="text-lg font-semibold">Graven Automation Pvt. Ltd.</h3>
+              <h3 className="text-lg font-semibold">Graven OneDesk</h3>
               <p className="text-sm text-muted-foreground">Business Management Platform</p>
             </div>
           </div>
@@ -234,7 +234,7 @@ export default function Index() {
 
           <div className="pt-8 border-t">
             <p className="text-sm text-muted-foreground">
-              © 2025 Graven Automation Pvt. Ltd. All rights reserved. | Built with ❤️ using open-source technologies
+              © 2025 Graven OneDesk. All rights reserved. | Built with ❤️ using open-source technologies
             </p>
           </div>
         </div>

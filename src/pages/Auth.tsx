@@ -79,7 +79,11 @@ export default function Auth() {
       });
       setError("Check your email to confirm your account!");
     } catch (err: any) {
-      setError(err.message || 'Signup failed. Please try again.');
+      if (err.message?.includes('rate_limit') || err.message?.includes('51 seconds') || err.message?.includes('429')) {
+        setError('Too many signup attempts. Please wait a minute before trying again.');
+      } else {
+        setError(err.message || 'Signup failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -90,7 +94,7 @@ export default function Auth() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Logo className="mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Graven Automation</h1>
+          <h1 className="text-2xl font-bold text-foreground">Graven OneDesk</h1>
           <p className="text-muted-foreground">Business Management Platform</p>
         </div>
 
@@ -115,7 +119,7 @@ export default function Auth() {
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="your.email@gravenautomation.com"
+                      placeholder="your.email@gravenonedesk.com"
                       value={loginForm.email}
                       onChange={(e) =>
                         setLoginForm({ ...loginForm, email: e.target.value })
@@ -182,7 +186,7 @@ export default function Auth() {
                     <Input
                       id="signup-email"
                       type="email"
-                      placeholder="your.email@gravenautomation.com"
+                      placeholder="your.email@gravenonedesk.com"
                       value={signupForm.email}
                       onChange={(e) =>
                         setSignupForm({ ...signupForm, email: e.target.value })
@@ -303,7 +307,7 @@ export default function Auth() {
 
         <div className="text-center text-sm text-muted-foreground">
           <Building2 className="inline-block w-4 h-4 mr-1" />
-          Graven Automation Pvt. Ltd. - Business Management Platform
+          Graven OneDesk - Business Management Platform
         </div>
       </div>
     </div>

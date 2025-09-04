@@ -25,7 +25,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
       <div className={cn("relative rounded-full overflow-hidden", sizeClasses[size])}>
         <img 
           src={logoImage} 
-          alt="Graven Automation" 
+          alt="Graven OneDesk" 
           className="w-full h-full object-cover"
         />
       </div>
@@ -35,7 +35,7 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
             GRAVEN
           </span>
           <span className={cn("font-semibold text-primary leading-tight", size === "sm" ? "text-xs" : size === "md" ? "text-sm" : "text-base")}>
-            AUTOMATION
+            ONEDESK
           </span>
         </div>
       )}

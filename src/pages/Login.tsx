@@ -43,7 +43,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>
-            Sign in to your Graven Automation account
+            Sign in to your Graven OneDesk account
           </CardDescription>
         </CardHeader>
         <CardContent>
