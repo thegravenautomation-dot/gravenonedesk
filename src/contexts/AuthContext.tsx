@@ -35,44 +35,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isActive = true; // Prevent state updates if component unmounts
+
     // Listen for auth changes first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email)
-      setUser(session?.user ?? null)
+      if (!isActive) return;
+      
+      console.log('Auth event:', event, session?.user?.email);
+      setUser(session?.user ?? null);
+      
       if (session?.user) {
+        // Use setTimeout to prevent blocking the auth callback
         setTimeout(() => {
-          fetchProfile(session.user.id)
-        }, 0)
+          if (isActive) {
+            fetchProfile(session.user.id);
+          }
+        }, 100);
       } else {
-        setProfile(null)
+        setProfile(null);
       }
-      setLoading(false)
-    })
+      setLoading(false);
+    });
 
-    // Then get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
+    // Then get initial session with timeout protection
+    const getInitialSession = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+
+        if (!isActive) return;
+
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
       }
-      setLoading(false)
-    })
+    };
 
-    return () => subscription.unsubscribe()
+    getInitialSession();
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
   }, [])
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Add timeout protection (10 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      );
+
+      const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .single();
 
-      if (error) throw error
-      setProfile(data)
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+      if (error) {
+        console.error('Profile fetch error:', error);
+        // Don't throw error, just log it and continue
+        return;
+      }
+      
+      setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Error fetching profile:', error);
+      // Don't throw error to prevent auth flow from breaking
     }
   }
 
