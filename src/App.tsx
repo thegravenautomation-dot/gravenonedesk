@@ -18,6 +18,7 @@ import HRDashboard from "@/pages/hr/HRDashboard";
 import ProcurementDashboard from "@/pages/procurement/ProcurementDashboard";
 import DispatchDashboard from "@/pages/dispatch/DispatchDashboard";
 import EmployeePortal from "@/pages/employee/EmployeePortal";
+import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -150,7 +151,18 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
-
+                
+                <Route 
+                  path="/analytics" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin', 'manager']}>
+                        <AnalyticsDashboard />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+                
                 <Route 
                   path="/employee" 
                   element={
