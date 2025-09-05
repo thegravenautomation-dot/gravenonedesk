@@ -882,6 +882,48 @@ export type Database = {
           },
         ]
       }
+      sync_status: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_error: string | null
+          last_sync_at: string | null
+          next_sync_at: string | null
+          rate_limit_until: string | null
+          source_name: string
+          sync_interval_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          rate_limit_until?: string | null
+          source_name: string
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          next_sync_at?: string | null
+          rate_limit_until?: string | null
+          source_name?: string
+          sync_interval_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       vendors: {
         Row: {
           address: string | null
@@ -960,6 +1002,16 @@ export type Database = {
       is_hr_or_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      update_sync_status: {
+        Args: {
+          p_branch_id: string
+          p_error_message?: string
+          p_interval_minutes?: number
+          p_source_name: string
+          p_success?: boolean
+        }
+        Returns: undefined
       }
     }
     Enums: {
