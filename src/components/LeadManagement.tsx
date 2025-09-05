@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign } from "lucide-react";
+import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -76,6 +77,13 @@ export function LeadManagement() {
   const [isManualLeadOpen, setIsManualLeadOpen] = useState(false);
   const [isAssignmentRulesOpen, setIsAssignmentRulesOpen] = useState(false);
   const [isSyncingLeads, setIsSyncingLeads] = useState(false);
+  
+  // Real-time sync configuration
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [syncInterval, setSyncInterval] = useState(5); // minutes
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<any>(null);
 
   const [newLead, setNewLead] = useState({
     title: "",
@@ -102,11 +110,126 @@ export function LeadManagement() {
   });
 
   useEffect(() => {
-    fetchLeads();
-    fetchAssignmentRules();
-    fetchLeadSources();
-    fetchEmployees();
+    if (profile?.branch_id) {
+      fetchLeads();
+      fetchAssignmentRules();
+      fetchLeadSources();
+      fetchEmployees();
+      setupRealtimeSubscription();
+      
+      if (autoSyncEnabled) {
+        startPeriodicSync();
+      }
+    }
+
+    return () => {
+      cleanup();
+    };
   }, [profile?.branch_id]);
+
+  useEffect(() => {
+    if (autoSyncEnabled) {
+      startPeriodicSync();
+    } else {
+      stopPeriodicSync();
+    }
+    
+    return () => stopPeriodicSync();
+  }, [autoSyncEnabled, syncInterval]);
+
+  const setupRealtimeSubscription = () => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    channelRef.current = supabase
+      .channel('leads-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'leads',
+        filter: `branch_id=eq.${profile?.branch_id}`
+      }, (payload) => {
+        console.log('Realtime lead update:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          toast({
+            title: "New Lead",
+            description: `New lead "${payload.new.title}" has been added`,
+          });
+        }
+        
+        // Refresh leads data
+        fetchLeads();
+      })
+      .subscribe();
+  };
+
+  const startPeriodicSync = () => {
+    stopPeriodicSync();
+    
+    const intervalMs = syncInterval * 60 * 1000; // Convert minutes to milliseconds
+    
+    syncIntervalRef.current = setInterval(() => {
+      performAutomaticSync();
+    }, intervalMs);
+    
+    console.log(`Auto-sync started: every ${syncInterval} minutes`);
+  };
+
+  const stopPeriodicSync = () => {
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+      syncIntervalRef.current = null;
+      console.log('Auto-sync stopped');
+    }
+  };
+
+  const cleanup = () => {
+    stopPeriodicSync();
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+  };
+
+  const performAutomaticSync = async () => {
+    try {
+      console.log('Performing automatic sync...');
+      setLastSyncTime(new Date());
+      
+      // Sync IndiaMART
+      const indiamartPromise = supabase.functions.invoke('indiamart-sync', { body: {} });
+      
+      // Sync TradeIndia
+      const tradeindiPromise = supabase.functions.invoke('tradeindia-sync', { body: {} });
+      
+      const [indiamartResult, tradeindiResult] = await Promise.allSettled([
+        indiamartPromise,
+        tradeindiPromise
+      ]);
+      
+      let totalNewLeads = 0;
+      
+      if (indiamartResult.status === 'fulfilled' && !indiamartResult.value.error) {
+        totalNewLeads += indiamartResult.value.data?.new || 0;
+      }
+      
+      if (tradeindiResult.status === 'fulfilled' && !tradeindiResult.value.error) {
+        totalNewLeads += tradeindiResult.value.data?.new || 0;
+      }
+      
+      if (totalNewLeads > 0) {
+        toast({
+          title: "Auto-sync Complete",
+          description: `${totalNewLeads} new leads synchronized`,
+        });
+        fetchLeads();
+      }
+      
+    } catch (error) {
+      console.error('Error in automatic sync:', error);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -441,7 +564,19 @@ export function LeadManagement() {
           </p>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 border rounded-lg px-3 py-2 bg-muted/50">
+            <Activity className="h-4 w-4 text-green-500" />
+            <span className="text-sm text-muted-foreground">
+              Real-time sync: {autoSyncEnabled ? 'ON' : 'OFF'}
+            </span>
+            {lastSyncTime && (
+              <span className="text-xs text-muted-foreground">
+                Last: {lastSyncTime.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+
           <Button
             variant="outline"
             onClick={handleSyncIndiaMART}
@@ -459,6 +594,69 @@ export function LeadManagement() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
             Sync TradeIndia
           </Button>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Zap className="h-4 w-4 mr-2" />
+                Real-time Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Real-time Sync Settings</DialogTitle>
+                <DialogDescription>
+                  Configure automatic synchronization from all lead sources
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base">Enable Auto-sync</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically sync leads from all sources at regular intervals
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={autoSyncEnabled} 
+                    onCheckedChange={setAutoSyncEnabled}
+                  />
+                </div>
+
+                {autoSyncEnabled && (
+                  <div className="space-y-2">
+                    <Label>Sync Interval (minutes)</Label>
+                    <Select value={syncInterval.toString()} onValueChange={(value) => setSyncInterval(Number(value))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Every 1 minute</SelectItem>
+                        <SelectItem value="5">Every 5 minutes</SelectItem>
+                        <SelectItem value="15">Every 15 minutes</SelectItem>
+                        <SelectItem value="30">Every 30 minutes</SelectItem>
+                        <SelectItem value="60">Every hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {lastSyncTime && (
+                      <p className="text-sm text-muted-foreground">
+                        Last sync: {lastSyncTime.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <Button onClick={performAutomaticSync} className="w-full">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sync Now
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Dialog open={isAssignmentRulesOpen} onOpenChange={setIsAssignmentRulesOpen}>
             <DialogTrigger asChild>
