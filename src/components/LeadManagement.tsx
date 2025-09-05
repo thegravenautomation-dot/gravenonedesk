@@ -95,7 +95,7 @@ export function LeadManagement() {
     assigned_to: "",
     priority: 1,
     conditions: {
-      source: "",
+      source: "any",
       value_min: 0,
       value_max: 0
     }
@@ -383,7 +383,7 @@ export function LeadManagement() {
         assigned_to: "",
         priority: 1,
         conditions: {
-          source: "",
+          source: "any",
           value_min: 0,
           value_max: 0
         }
@@ -530,7 +530,7 @@ export function LeadManagement() {
                             <SelectValue placeholder="Filter by source" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Any Source</SelectItem>
+                            <SelectItem value="any">Any Source</SelectItem>
                             <SelectItem value="indiamart">IndiaMART</SelectItem>
                             <SelectItem value="tradeindia">TradeIndia</SelectItem>
                             <SelectItem value="whatsapp">WhatsApp</SelectItem>
@@ -596,7 +596,7 @@ export function LeadManagement() {
                             <TableCell>{rule.profiles?.full_name}</TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                {rule.conditions.source && <div>Source: {rule.conditions.source}</div>}
+                                {rule.conditions.source && rule.conditions.source !== "any" && <div>Source: {rule.conditions.source}</div>}
                                 {rule.conditions.value_min > 0 && <div>Min: ₹{rule.conditions.value_min}</div>}
                                 {rule.conditions.value_max > 0 && <div>Max: ₹{rule.conditions.value_max}</div>}
                               </div>
