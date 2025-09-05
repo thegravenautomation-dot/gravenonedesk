@@ -113,6 +113,105 @@ export type Database = {
         }
         Relationships: []
       }
+      communication_templates: {
+        Row: {
+          branch_id: string
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string | null
+          template_body: string
+          type: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          branch_id: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject?: string | null
+          template_body: string
+          type: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          branch_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string | null
+          template_body?: string
+          type?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      communications: {
+        Row: {
+          branch_id: string
+          contact_type: string
+          created_at: string
+          direction: string
+          from_contact: string
+          id: string
+          message: string
+          metadata: Json | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          sent_by: string | null
+          status: string
+          subject: string | null
+          to_contact: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          contact_type: string
+          created_at?: string
+          direction: string
+          from_contact: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          to_contact: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          contact_type?: string
+          created_at?: string
+          direction?: string
+          from_contact?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          to_contact?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null

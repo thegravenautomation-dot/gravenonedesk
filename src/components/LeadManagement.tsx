@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity } from "lucide-react";
+import { CommunicationPanel } from "@/components/communication/CommunicationPanel";
+import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity, MessageSquare, Eye, Edit } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -77,6 +78,9 @@ export function LeadManagement() {
   const [isManualLeadOpen, setIsManualLeadOpen] = useState(false);
   const [isAssignmentRulesOpen, setIsAssignmentRulesOpen] = useState(false);
   const [isSyncingLeads, setIsSyncingLeads] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   
   // Real-time sync configuration
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
@@ -664,6 +668,16 @@ export function LeadManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleViewLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleCommunication = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsCommunicationDialogOpen(true);
   };
 
   const filteredLeads = leads.filter(lead => {
@@ -1318,9 +1332,29 @@ export function LeadManagement() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm">
-                      View
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewLead(lead)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCommunication(lead)}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewLead(lead)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -1328,6 +1362,75 @@ export function LeadManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* View Lead Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Lead Details - {selectedLead?.lead_no}</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Title</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLead.title}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge className={getStatusColor(selectedLead.status)}>
+                    {selectedLead.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Customer</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLead.customers?.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Source</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLead.lead_sources?.name || selectedLead.source}</p>
+                </div>
+                {selectedLead.value && (
+                  <div>
+                    <Label className="text-sm font-medium">Value</Label>
+                    <p className="text-sm text-muted-foreground">₹{selectedLead.value?.toLocaleString()}</p>
+                  </div>
+                )}
+                {selectedLead.probability && (
+                  <div>
+                    <Label className="text-sm font-medium">Probability</Label>
+                    <p className="text-sm text-muted-foreground">{selectedLead.probability}%</p>
+                  </div>
+                )}
+              </div>
+              {selectedLead.description && (
+                <div>
+                  <Label className="text-sm font-medium">Description</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLead.description}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Communication Dialog */}
+      <Dialog open={isCommunicationDialogOpen} onOpenChange={setIsCommunicationDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Communication - {selectedLead?.customers?.name}</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <CommunicationPanel
+              entityType="lead"
+              entityId={selectedLead.id}
+              contactEmail={selectedLead.customers?.email}
+              contactPhone={selectedLead.customers?.phone}
+              contactName={selectedLead.customers?.name}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
