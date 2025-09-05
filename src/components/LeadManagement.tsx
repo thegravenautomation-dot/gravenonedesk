@@ -88,6 +88,8 @@ export function LeadManagement() {
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const [syncStatuses, setSyncStatuses] = useState<any[]>([]);
+  const syncStatusChannelRef = useRef<any>(null);
 
   const [newLead, setNewLead] = useState({
     title: "",
@@ -119,7 +121,9 @@ export function LeadManagement() {
       fetchAssignmentRules();
       fetchLeadSources();
       fetchEmployees();
+      fetchSyncStatuses();
       setupRealtimeSubscription();
+      setupSyncStatusSubscription();
       
       if (autoSyncEnabled) {
         startPeriodicSync();
@@ -140,6 +144,63 @@ export function LeadManagement() {
     
     return () => stopPeriodicSync();
   }, [autoSyncEnabled, syncInterval]);
+
+  const setupSyncStatusSubscription = () => {
+    if (syncStatusChannelRef.current) {
+      supabase.removeChannel(syncStatusChannelRef.current);
+    }
+
+    syncStatusChannelRef.current = supabase
+      .channel('sync-status-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'sync_status',
+        filter: `branch_id=eq.${profile?.branch_id}`
+      }, (payload) => {
+        console.log('Realtime sync status update:', payload);
+        fetchSyncStatuses();
+      })
+      .subscribe();
+  };
+
+  const fetchSyncStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sync_status')
+        .select('*')
+        .eq('branch_id', profile?.branch_id)
+        .order('source_name', { ascending: true });
+
+      if (error) throw error;
+      setSyncStatuses(data || []);
+
+      // Update individual status states for UI
+      const indiamartStatus = data?.find(s => s.source_name === 'indiamart');
+      const tradeindiStatus = data?.find(s => s.source_name === 'tradeindia');
+
+      if (indiamartStatus?.last_sync_at) {
+        setLastIndiaMartSync(new Date(indiamartStatus.last_sync_at));
+      }
+      if (tradeindiStatus?.last_sync_at) {
+        setLastTradeIndiaSync(new Date(tradeindiStatus.last_sync_at));
+      }
+
+      // Update sync status based on any errors or rate limits
+      const hasRateLimit = data?.some(s => s.rate_limit_until && new Date(s.rate_limit_until) > new Date());
+      const hasError = data?.some(s => s.last_error);
+      
+      if (hasRateLimit) {
+        setSyncStatus('rate_limited');
+      } else if (hasError) {
+        setSyncStatus('error');
+      } else {
+        setSyncStatus('idle');
+      }
+    } catch (error) {
+      console.error('Error fetching sync statuses:', error);
+    }
+  };
 
   const setupRealtimeSubscription = () => {
     if (channelRef.current) {
@@ -213,6 +274,9 @@ export function LeadManagement() {
     stopPeriodicSync();
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+    }
+    if (syncStatusChannelRef.current) {
+      supabase.removeChannel(syncStatusChannelRef.current);
     }
   };
 
@@ -742,30 +806,45 @@ export function LeadManagement() {
                   <div className="space-y-2">
                     <Label>Sync Status</Label>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 border rounded bg-muted/30">
-                        <div className="font-medium">IndiaMART</div>
-                        <div className="text-muted-foreground">
-                          {lastIndiaMartSync ? 
-                            `Last: ${lastIndiaMartSync.toLocaleTimeString()}` : 
-                            'Never synced'
-                          }
-                        </div>
-                        <div className="text-muted-foreground">
-                          Rate limit: 5 min
-                        </div>
-                      </div>
-                      <div className="p-2 border rounded bg-muted/30">
-                        <div className="font-medium">TradeIndia</div>
-                        <div className="text-muted-foreground">
-                          {lastTradeIndiaSync ? 
-                            `Last: ${lastTradeIndiaSync.toLocaleTimeString()}` : 
-                            'Never synced'
-                          }
-                        </div>
-                        <div className="text-muted-foreground">
-                          Rate limit: 2 min
-                        </div>
-                      </div>
+                      {syncStatuses.map(status => {
+                        const isRateLimited = status.rate_limit_until && new Date(status.rate_limit_until) > new Date();
+                        const nextSync = status.next_sync_at ? new Date(status.next_sync_at) : null;
+                        const canSyncNow = !isRateLimited && (!nextSync || nextSync <= new Date());
+                        
+                        return (
+                          <div key={status.source_name} className="p-2 border rounded bg-muted/30">
+                            <div className="font-medium flex items-center gap-1">
+                              {status.source_name === 'indiamart' ? 'IndiaMART' : 'TradeIndia'}
+                              <div className={`w-2 h-2 rounded-full ${
+                                isRateLimited ? 'bg-red-500' :
+                                status.last_error ? 'bg-yellow-500' :
+                                canSyncNow ? 'bg-green-500' : 'bg-blue-500'
+                              }`} />
+                            </div>
+                            <div className="text-muted-foreground">
+                              {status.last_sync_at ? 
+                                `Last: ${new Date(status.last_sync_at).toLocaleTimeString()}` : 
+                                'Never synced'
+                              }
+                            </div>
+                            {isRateLimited && (
+                              <div className="text-red-500 text-xs">
+                                Rate limited until {new Date(status.rate_limit_until).toLocaleTimeString()}
+                              </div>
+                            )}
+                            {nextSync && !isRateLimited && (
+                              <div className="text-muted-foreground text-xs">
+                                Next: {nextSync.toLocaleTimeString()}
+                              </div>
+                            )}
+                            {status.last_error && (
+                              <div className="text-yellow-600 text-xs truncate" title={status.last_error}>
+                                Error: {status.last_error.substring(0, 20)}...
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

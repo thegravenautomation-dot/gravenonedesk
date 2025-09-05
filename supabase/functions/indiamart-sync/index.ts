@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    console.log('Starting IndiaMART sync...');
+    console.log('Starting intelligent IndiaMART sync...');
 
     // Get all branches to sync leads for each
     const { data: branches, error: branchError } = await supabase
@@ -51,73 +51,141 @@ const handler = async (req: Request): Promise<Response> => {
     let totalNew = 0;
 
     for (const branch of branches || []) {
-      console.log(`Processing leads for branch: ${branch.name}`);
+      console.log(`Processing IndiaMART for branch: ${branch.name}`);
 
-      // Get the last sync timestamp for this branch (optional)
-      const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000); // Last 24 hours
-      const endTime = new Date();
+      try {
+        // Check sync status and rate limits
+        const { data: syncStatus } = await supabase
+          .from('sync_status')
+          .select('*')
+          .eq('source_name', 'indiamart')
+          .eq('branch_id', branch.id)
+          .maybeSingle();
 
-      // IndiaMART API call to get leads
-      const indiaMArtUrl = `https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=${startTime.toISOString()}&end_time=${endTime.toISOString()}`;
-      
-      console.log('Calling IndiaMART API:', indiaMArtUrl);
-
-      const response = await fetch(indiaMArtUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.error(`IndiaMART API error: ${response.status} ${response.statusText}`);
-        continue;
-      }
-
-      const responseData = await response.json();
-      console.log('IndiaMART API response:', responseData);
-
-      if (responseData.STATUS === 'SUCCESS' && responseData.RESPONSE) {
-        const leads = Array.isArray(responseData.RESPONSE) ? responseData.RESPONSE : [responseData.RESPONSE];
-
-        for (const leadData of leads) {
-          totalProcessed++;
-
-          // Check if lead already exists
-          const { data: existingLead } = await supabase
-            .from('leads')
-            .select('id')
-            .eq('external_id', leadData.UNIQUE_QUERY_ID)
-            .eq('branch_id', branch.id)
-            .maybeSingle();
-
-          if (existingLead) {
-            console.log(`Lead ${leadData.UNIQUE_QUERY_ID} already exists, skipping...`);
-            continue;
-          }
-
-          // Process new lead using lead-capture function
-          try {
-            const captureResponse = await supabase.functions.invoke('lead-capture', {
-              body: {
-                source: 'indiamart',
-                leadData: leadData,
-                branchId: branch.id
-              }
-            });
-
-            if (captureResponse.error) {
-              console.error('Error processing lead via lead-capture:', captureResponse.error);
-            } else {
-              totalNew++;
-              console.log(`Successfully processed lead: ${leadData.UNIQUE_QUERY_ID}`);
-            }
-          } catch (error) {
-            console.error('Error calling lead-capture function:', error);
-          }
+        // Check if we're rate limited
+        if (syncStatus?.rate_limit_until && new Date(syncStatus.rate_limit_until) > new Date()) {
+          console.log(`Branch ${branch.name} is rate limited until ${syncStatus.rate_limit_until}`);
+          continue;
         }
-      } else {
-        console.log('No new leads from IndiaMART for branch:', branch.name);
+
+        // Get the last sync timestamp for this branch
+        const startTime = syncStatus?.last_sync_at 
+          ? new Date(syncStatus.last_sync_at) 
+          : new Date(Date.now() - 24 * 60 * 60 * 1000); // Last 24 hours
+        const endTime = new Date();
+
+        // IndiaMART API call to get leads
+        const indiaMArtUrl = `https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=${startTime.toISOString()}&end_time=${endTime.toISOString()}`;
+        
+        console.log('Calling IndiaMART API for branch:', branch.name);
+
+        const response = await fetch(indiaMArtUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const responseData = await response.json();
+        console.log(`IndiaMART API response for ${branch.name}:`, {
+          status: response.status,
+          code: responseData.CODE,
+          message: responseData.MESSAGE,
+          totalRecords: responseData.TOTAL_RECORDS
+        });
+
+        // Update sync status based on response
+        if (response.status === 429 || responseData.CODE === 429) {
+          await supabase.rpc('update_sync_status', {
+            p_source_name: 'indiamart',
+            p_branch_id: branch.id,
+            p_success: false,
+            p_error_message: responseData.MESSAGE || 'Rate limit exceeded'
+          });
+          console.log(`Rate limited for branch ${branch.name}`);
+          continue;
+        }
+
+        if (!response.ok) {
+          console.error(`IndiaMART API error for ${branch.name}: ${response.status} ${response.statusText}`);
+          await supabase.rpc('update_sync_status', {
+            p_source_name: 'indiamart',
+            p_branch_id: branch.id,
+            p_success: false,
+            p_error_message: `API error: ${response.status} ${response.statusText}`
+          });
+          continue;
+        }
+
+        if (responseData.STATUS === 'SUCCESS' && responseData.RESPONSE) {
+          const leads = Array.isArray(responseData.RESPONSE) ? responseData.RESPONSE : [responseData.RESPONSE];
+          let branchNewLeads = 0;
+
+          for (const leadData of leads) {
+            totalProcessed++;
+
+            // Check if lead already exists
+            const { data: existingLead } = await supabase
+              .from('leads')
+              .select('id')
+              .eq('external_id', leadData.UNIQUE_QUERY_ID)
+              .eq('branch_id', branch.id)
+              .maybeSingle();
+
+            if (existingLead) {
+              console.log(`Lead ${leadData.UNIQUE_QUERY_ID} already exists, skipping...`);
+              continue;
+            }
+
+            // Process new lead using lead-capture function
+            try {
+              const captureResponse = await supabase.functions.invoke('lead-capture', {
+                body: {
+                  source: 'indiamart',
+                  leadData: leadData,
+                  branchId: branch.id
+                }
+              });
+
+              if (captureResponse.error) {
+                console.error('Error processing lead via lead-capture:', captureResponse.error);
+              } else {
+                totalNew++;
+                branchNewLeads++;
+                console.log(`Successfully processed lead: ${leadData.UNIQUE_QUERY_ID}`);
+              }
+            } catch (error) {
+              console.error('Error calling lead-capture function:', error);
+            }
+          }
+
+          // Update successful sync status
+          await supabase.rpc('update_sync_status', {
+            p_source_name: 'indiamart',
+            p_branch_id: branch.id,
+            p_success: true,
+            p_error_message: null
+          });
+
+          console.log(`Branch ${branch.name}: ${branchNewLeads} new leads from ${leads.length} total`);
+        } else {
+          console.log('No new leads from IndiaMART for branch:', branch.name);
+          // Update sync status even if no leads (successful sync)
+          await supabase.rpc('update_sync_status', {
+            p_source_name: 'indiamart',
+            p_branch_id: branch.id,
+            p_success: true,
+            p_error_message: null
+          });
+        }
+      } catch (error: any) {
+        console.error(`Error processing branch ${branch.name}:`, error);
+        await supabase.rpc('update_sync_status', {
+          p_source_name: 'indiamart',
+          p_branch_id: branch.id,
+          p_success: false,
+          p_error_message: error.message
+        });
       }
     }
 
@@ -128,7 +196,7 @@ const handler = async (req: Request): Promise<Response> => {
         success: true,
         processed: totalProcessed,
         new: totalNew,
-        message: 'IndiaMART sync completed successfully'
+        message: 'IndiaMART intelligent sync completed successfully'
       }),
       {
         status: 200,
