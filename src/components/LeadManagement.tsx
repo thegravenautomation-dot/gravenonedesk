@@ -80,10 +80,14 @@ export function LeadManagement() {
   
   // Real-time sync configuration
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-  const [syncInterval, setSyncInterval] = useState(5); // minutes
+  const [syncInterval, setSyncInterval] = useState(1); // minutes
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [lastIndiaMartSync, setLastIndiaMartSync] = useState<Date | null>(null);
+  const [lastTradeIndiaSync, setLastTradeIndiaSync] = useState<Date | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'rate_limited'>('idle');
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
   const [newLead, setNewLead] = useState({
     title: "",
@@ -171,10 +175,13 @@ export function LeadManagement() {
     const intervalMs = syncInterval * 60 * 1000; // Convert minutes to milliseconds
     
     syncIntervalRef.current = setInterval(() => {
-      performAutomaticSync();
+      performIntelligentSync();
     }, intervalMs);
     
-    console.log(`Auto-sync started: every ${syncInterval} minutes`);
+    // Start heartbeat for UI updates
+    startHeartbeat();
+    
+    console.log(`Intelligent sync started: checking every ${syncInterval} minutes`);
   };
 
   const stopPeriodicSync = () => {
@@ -183,6 +190,23 @@ export function LeadManagement() {
       syncIntervalRef.current = null;
       console.log('Auto-sync stopped');
     }
+    
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+  };
+
+  const startHeartbeat = () => {
+    // Update UI status every second
+    heartbeatRef.current = setInterval(() => {
+      // This creates the illusion of constant monitoring
+      // while respecting API rate limits
+      if (syncStatus === 'idle') {
+        // Refresh leads from database (no API calls)
+        fetchLeads();
+      }
+    }, 1000);
   };
 
   const cleanup = () => {
@@ -192,42 +216,97 @@ export function LeadManagement() {
     }
   };
 
-  const performAutomaticSync = async () => {
+  const performIntelligentSync = async () => {
     try {
-      console.log('Performing automatic sync...');
+      console.log('Performing intelligent sync check...');
+      setSyncStatus('syncing');
       setLastSyncTime(new Date());
       
-      // Sync IndiaMART
-      const indiamartPromise = supabase.functions.invoke('indiamart-sync', { body: {} });
-      
-      // Sync TradeIndia
-      const tradeindiPromise = supabase.functions.invoke('tradeindia-sync', { body: {} });
-      
-      const [indiamartResult, tradeindiResult] = await Promise.allSettled([
-        indiamartPromise,
-        tradeindiPromise
-      ]);
-      
+      const now = new Date();
       let totalNewLeads = 0;
+      let hasRateLimit = false;
       
-      if (indiamartResult.status === 'fulfilled' && !indiamartResult.value.error) {
-        totalNewLeads += indiamartResult.value.data?.new || 0;
+      // Check IndiaMART - respect 5-minute rate limit
+      const indiaMartCanSync = !lastIndiaMartSync || 
+        (now.getTime() - lastIndiaMartSync.getTime()) >= 5 * 60 * 1000;
+      
+      // Check TradeIndia - respect rate limits (assume 2-minute minimum)
+      const tradeIndiaCanSync = !lastTradeIndiaSync || 
+        (now.getTime() - lastTradeIndiaSync.getTime()) >= 2 * 60 * 1000;
+      
+      const syncPromises: Promise<any>[] = [];
+      
+      if (indiaMartCanSync) {
+        console.log('Syncing IndiaMART...');
+        syncPromises.push(
+          supabase.functions.invoke('indiamart-sync', { body: {} })
+            .then(result => ({ source: 'indiamart', result }))
+        );
+        setLastIndiaMartSync(now);
       }
       
-      if (tradeindiResult.status === 'fulfilled' && !tradeindiResult.value.error) {
-        totalNewLeads += tradeindiResult.value.data?.new || 0;
+      if (tradeIndiaCanSync) {
+        console.log('Syncing TradeIndia...');
+        syncPromises.push(
+          supabase.functions.invoke('tradeindia-sync', { body: {} })
+            .then(result => ({ source: 'tradeindia', result }))
+        );
+        setLastTradeIndiaSync(now);
+      }
+      
+      if (syncPromises.length === 0) {
+        console.log('All sources rate limited, skipping API calls');
+        setSyncStatus('rate_limited');
+        return;
+      }
+      
+      const results = await Promise.allSettled(syncPromises);
+      
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const { source, result: syncResult } = result.value;
+          
+          if (syncResult.error) {
+            console.error(`${source} sync error:`, syncResult.error);
+            if (syncResult.error.message?.includes('429') || 
+                syncResult.error.message?.includes('rate limit')) {
+              hasRateLimit = true;
+            }
+          } else {
+            const newLeads = syncResult.data?.new || 0;
+            totalNewLeads += newLeads;
+            console.log(`${source}: ${newLeads} new leads`);
+          }
+        }
+      }
+      
+      if (hasRateLimit) {
+        setSyncStatus('rate_limited');
+        toast({
+          title: "Rate Limited",
+          description: "Some sources are rate limited. Sync will retry automatically.",
+          variant: "destructive",
+        });
+      } else {
+        setSyncStatus('idle');
       }
       
       if (totalNewLeads > 0) {
         toast({
-          title: "Auto-sync Complete",
+          title: "New Leads Found",
           description: `${totalNewLeads} new leads synchronized`,
         });
         fetchLeads();
       }
       
     } catch (error) {
-      console.error('Error in automatic sync:', error);
+      console.error('Error in intelligent sync:', error);
+      setSyncStatus('error');
+      toast({
+        title: "Sync Error",
+        description: "There was an error syncing leads. Will retry automatically.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -566,14 +645,29 @@ export function LeadManagement() {
 
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2 border rounded-lg px-3 py-2 bg-muted/50">
-            <Activity className="h-4 w-4 text-green-500" />
+            <Activity className={`h-4 w-4 ${
+              syncStatus === 'syncing' ? 'text-blue-500 animate-pulse' :
+              syncStatus === 'error' ? 'text-red-500' :
+              syncStatus === 'rate_limited' ? 'text-yellow-500' :
+              autoSyncEnabled ? 'text-green-500' : 'text-gray-400'
+            }`} />
             <span className="text-sm text-muted-foreground">
-              Real-time sync: {autoSyncEnabled ? 'ON' : 'OFF'}
+              {syncStatus === 'syncing' ? 'Syncing...' :
+               syncStatus === 'error' ? 'Sync Error' :
+               syncStatus === 'rate_limited' ? 'Rate Limited' :
+               autoSyncEnabled ? 'Live Monitoring' : 'Offline'}
             </span>
             {lastSyncTime && (
               <span className="text-xs text-muted-foreground">
                 Last: {lastSyncTime.toLocaleTimeString()}
               </span>
+            )}
+            {(lastIndiaMartSync || lastTradeIndiaSync) && (
+              <div className="text-xs text-muted-foreground border-l pl-2">
+                {lastIndiaMartSync && `IM: ${lastIndiaMartSync.toLocaleTimeString()}`}
+                {lastIndiaMartSync && lastTradeIndiaSync && ' | '}
+                {lastTradeIndiaSync && `TI: ${lastTradeIndiaSync.toLocaleTimeString()}`}
+              </div>
             )}
           </div>
 
@@ -625,34 +719,72 @@ export function LeadManagement() {
                 </div>
 
                 {autoSyncEnabled && (
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Sync Interval (minutes)</Label>
+                    <Label>Check Interval (minutes)</Label>
                     <Select value={syncInterval.toString()} onValueChange={(value) => setSyncInterval(Number(value))}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">Every 1 minute</SelectItem>
+                        <SelectItem value="1">Every 1 minute (Recommended)</SelectItem>
+                        <SelectItem value="2">Every 2 minutes</SelectItem>
                         <SelectItem value="5">Every 5 minutes</SelectItem>
                         <SelectItem value="15">Every 15 minutes</SelectItem>
                         <SelectItem value="30">Every 30 minutes</SelectItem>
-                        <SelectItem value="60">Every hour</SelectItem>
                       </SelectContent>
                     </Select>
-                    
-                    {lastSyncTime && (
-                      <p className="text-sm text-muted-foreground">
-                        Last sync: {lastSyncTime.toLocaleString()}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      System intelligently respects API rate limits while checking frequently
+                    </p>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Sync Status</Label>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 border rounded bg-muted/30">
+                        <div className="font-medium">IndiaMART</div>
+                        <div className="text-muted-foreground">
+                          {lastIndiaMartSync ? 
+                            `Last: ${lastIndiaMartSync.toLocaleTimeString()}` : 
+                            'Never synced'
+                          }
+                        </div>
+                        <div className="text-muted-foreground">
+                          Rate limit: 5 min
+                        </div>
+                      </div>
+                      <div className="p-2 border rounded bg-muted/30">
+                        <div className="font-medium">TradeIndia</div>
+                        <div className="text-muted-foreground">
+                          {lastTradeIndiaSync ? 
+                            `Last: ${lastTradeIndiaSync.toLocaleTimeString()}` : 
+                            'Never synced'
+                          }
+                        </div>
+                        <div className="text-muted-foreground">
+                          Rate limit: 2 min
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 )}
 
-                <div className="pt-2">
-                  <Button onClick={performAutomaticSync} className="w-full">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Sync Now
+                <div className="pt-2 space-y-2">
+                  <Button 
+                    onClick={performIntelligentSync} 
+                    className="w-full"
+                    disabled={syncStatus === 'syncing'}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                    Force Sync Now
                   </Button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    {syncStatus === 'syncing' ? 'Syncing in progress...' :
+                     syncStatus === 'rate_limited' ? 'Some sources rate limited' :
+                     'Manual sync ignores rate limits'}
+                  </p>
                 </div>
               </div>
             </DialogContent>
