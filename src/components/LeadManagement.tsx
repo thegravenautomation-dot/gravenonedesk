@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationPanel } from "@/components/communication/CommunicationPanel";
-import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity, MessageSquare, Eye, Edit } from "lucide-react";
+import { LeadProfile } from "@/components/LeadProfile";
+import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity, MessageSquare, Eye, Edit, UserCheck } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -79,7 +80,7 @@ export function LeadManagement() {
   const [isAssignmentRulesOpen, setIsAssignmentRulesOpen] = useState(false);
   const [isSyncingLeads, setIsSyncingLeads] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isLeadProfileOpen, setIsLeadProfileOpen] = useState(false);
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
   
   // Real-time sync configuration
@@ -672,7 +673,7 @@ export function LeadManagement() {
 
   const handleViewLead = (lead: Lead) => {
     setSelectedLead(lead);
-    setIsViewDialogOpen(true);
+    setIsLeadProfileOpen(true);
   };
 
   const handleCommunication = (lead: Lead) => {
@@ -1374,56 +1375,18 @@ export function LeadManagement() {
         </CardContent>
       </Card>
 
-      {/* View Lead Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Lead Details - {selectedLead?.lead_no}</DialogTitle>
-          </DialogHeader>
-          {selectedLead && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Title</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLead.title}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={getStatusColor(selectedLead.status)}>
-                    {selectedLead.status}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Customer</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLead.customers?.name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Source</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLead.lead_sources?.name || selectedLead.source}</p>
-                </div>
-                {selectedLead.value && (
-                  <div>
-                    <Label className="text-sm font-medium">Value</Label>
-                    <p className="text-sm text-muted-foreground">₹{selectedLead.value?.toLocaleString()}</p>
-                  </div>
-                )}
-                {selectedLead.probability && (
-                  <div>
-                    <Label className="text-sm font-medium">Probability</Label>
-                    <p className="text-sm text-muted-foreground">{selectedLead.probability}%</p>
-                  </div>
-                )}
-              </div>
-              {selectedLead.description && (
-                <div>
-                  <Label className="text-sm font-medium">Description</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLead.description}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Lead Profile Component */}
+      {isLeadProfileOpen && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <LeadProfile
+            leadId={selectedLead.id}
+            onClose={() => {
+              setIsLeadProfileOpen(false);
+              setSelectedLead(null);
+            }}
+          />
+        </div>
+      )}
 
       {/* Communication Dialog */}
       <Dialog open={isCommunicationDialogOpen} onOpenChange={setIsCommunicationDialogOpen}>

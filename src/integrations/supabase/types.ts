@@ -67,48 +67,63 @@ export type Database = {
       }
       branches: {
         Row: {
+          account_holder_name: string | null
+          account_number: string | null
           address: string | null
+          bank_name: string | null
           city: string | null
           code: string
           created_at: string | null
           email: string | null
           id: string
+          ifsc_code: string | null
           is_active: boolean | null
           manager_id: string | null
           name: string
           phone: string | null
           pincode: string | null
           state: string | null
+          terms_conditions: string | null
           updated_at: string | null
         }
         Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
+          bank_name?: string | null
           city?: string | null
           code: string
           created_at?: string | null
           email?: string | null
           id?: string
+          ifsc_code?: string | null
           is_active?: boolean | null
           manager_id?: string | null
           name: string
           phone?: string | null
           pincode?: string | null
           state?: string | null
+          terms_conditions?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
+          bank_name?: string | null
           city?: string | null
           code?: string
           created_at?: string | null
           email?: string | null
           id?: string
+          ifsc_code?: string | null
           is_active?: boolean | null
           manager_id?: string | null
           name?: string
           phone?: string | null
           pincode?: string | null
           state?: string | null
+          terms_conditions?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -215,12 +230,14 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          billing_address: string | null
           branch_id: string | null
           city: string | null
           company: string | null
           created_at: string | null
           created_by: string | null
           credit_limit: number | null
+          designation: string | null
           email: string | null
           gstin: string | null
           id: string
@@ -228,17 +245,21 @@ export type Database = {
           pan: string | null
           phone: string | null
           pincode: string | null
+          shipping_address: string | null
           state: string | null
           updated_at: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           address?: string | null
+          billing_address?: string | null
           branch_id?: string | null
           city?: string | null
           company?: string | null
           created_at?: string | null
           created_by?: string | null
           credit_limit?: number | null
+          designation?: string | null
           email?: string | null
           gstin?: string | null
           id?: string
@@ -246,17 +267,21 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          shipping_address?: string | null
           state?: string | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           address?: string | null
+          billing_address?: string | null
           branch_id?: string | null
           city?: string | null
           company?: string | null
           created_at?: string | null
           created_by?: string | null
           credit_limit?: number | null
+          designation?: string | null
           email?: string | null
           gstin?: string | null
           id?: string
@@ -264,8 +289,10 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          shipping_address?: string | null
           state?: string | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
@@ -458,6 +485,65 @@ export type Database = {
             columns: ["reporting_manager"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          hsn_code: string | null
+          id: string
+          invoice_id: string
+          item_name: string
+          quantity: number | null
+          sr_no: number
+          total_amount: number
+          unit: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          invoice_id: string
+          item_name: string
+          quantity?: number | null
+          sr_no: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          invoice_id?: string
+          item_name?: string
+          quantity?: number | null
+          sr_no?: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -738,6 +824,65 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          hsn_code: string | null
+          id: string
+          item_name: string
+          order_id: string
+          quantity: number | null
+          sr_no: number
+          total_amount: number
+          unit: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name: string
+          order_id: string
+          quantity?: number | null
+          sr_no: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name?: string
+          order_id?: string
+          quantity?: number | null
+          sr_no?: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           branch_id: string | null
@@ -930,6 +1075,65 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          hsn_code: string | null
+          id: string
+          item_name: string
+          quantity: number | null
+          quotation_id: string
+          sr_no: number
+          total_amount: number
+          unit: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name: string
+          quantity?: number | null
+          quotation_id: string
+          sr_no: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number | null
+          quotation_id?: string
+          sr_no?: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
             referencedColumns: ["id"]
           },
         ]
