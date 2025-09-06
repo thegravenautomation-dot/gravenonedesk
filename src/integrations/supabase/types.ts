@@ -1155,6 +1155,13 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_security_recommendations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_required: string
+          recommendation: string
+        }[]
+      }
       is_admin: {
         Args: { _user_id: string }
         Returns: boolean
