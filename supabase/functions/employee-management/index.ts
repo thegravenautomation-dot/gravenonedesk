@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    const { action, employeeData, employeeId, password } = await req.json();
+    const { action, employeeData, employeeId, password, newPassword } = await req.json();
 
     console.log(`Employee management action: ${action}`);
 
@@ -276,6 +276,31 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         }
       );
+
+    } else if (action === 'reset_password') {
+      // Reset user's password via admin API
+      if (!employeeId || !newPassword) {
+        return new Response(JSON.stringify({ error: 'employeeId and newPassword are required' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+      // Fetch employee to get profile_id
+      const { data: empRow, error: empErr } = await supabase
+        .from('employees')
+        .select('id, profile_id, email')
+        .eq('id', employeeId)
+        .single();
+      if (empErr) {
+        console.error('Error fetching employee for password reset:', empErr);
+        return new Response(JSON.stringify({ error: 'Employee not found', details: empErr.message }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+      if (!empRow?.profile_id) {
+        return new Response(JSON.stringify({ error: 'Employee is not linked to an auth profile' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+      const { error: updErr } = await supabase.auth.admin.updateUserById(empRow.profile_id, { password: newPassword });
+      if (updErr) {
+        console.error('Password reset error:', updErr);
+        return new Response(JSON.stringify({ error: 'Failed to reset password', details: updErr.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+      }
+      return new Response(JSON.stringify({ success: true, message: 'Password reset successfully' }), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 
     } else if (action === 'deactivate') {
       // Deactivate employee (don't delete, just mark as inactive)
