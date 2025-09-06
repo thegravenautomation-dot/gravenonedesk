@@ -274,14 +274,119 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
   const convertToProformaInvoice = async () => {
     try {
       setLoading(true);
-      // First save the quotation
-      await handleSaveQuotation();
       
-      // Then convert logic would go here
+      // First save the quotation
+      const { subtotal, totalGst, total } = calculateTotals();
+
+      // Create quotation first
+      const { data: quotation, error: quotationError } = await supabase
+        .from('quotations')
+        .insert({
+          quotation_no: quotationData.quotation_no,
+          customer_id: customerId,
+          lead_id: leadId,
+          branch_id: profile?.branch_id,
+          subtotal: subtotal,
+          tax_amount: totalGst,
+          total_amount: total,
+          valid_till: quotationData.valid_till || null,
+          terms: quotationData.terms || branchData?.terms_conditions,
+          status: 'draft',
+          created_by: profile?.id,
+        })
+        .select()
+        .single();
+
+      if (quotationError) throw quotationError;
+
+      // Create quotation items
+      const quotationItems = items.map(item => ({
+        quotation_id: quotation.id,
+        sr_no: item.sr_no,
+        item_name: item.item_name,
+        description: item.description,
+        hsn_code: item.hsn_code,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount,
+        gst_rate: item.gst_rate,
+        gst_amount: item.gst_amount,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('quotation_items')
+        .insert(quotationItems);
+
+      if (itemsError) throw itemsError;
+
+      // Generate proforma invoice number
+      const { data: lastInvoice } = await supabase
+        .from('invoices')
+        .select('invoice_no')
+        .eq('branch_id', profile?.branch_id)
+        .eq('invoice_type', 'proforma')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let nextNumber = 1;
+      if (lastInvoice && lastInvoice.length > 0) {
+        const lastNumber = lastInvoice[0].invoice_no.match(/\d+$/);
+        if (lastNumber) {
+          nextNumber = parseInt(lastNumber[0]) + 1;
+        }
+      }
+
+      const invoiceNo = `PI-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
+
+      // Create proforma invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          invoice_no: invoiceNo,
+          invoice_type: 'proforma',
+          customer_id: customerId,
+          branch_id: profile?.branch_id,
+          subtotal: subtotal,
+          tax_amount: totalGst,
+          total_amount: total,
+          payment_status: 'pending',
+          invoice_date: new Date().toISOString().split('T')[0]
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      // Create invoice items
+      const invoiceItems = items.map(item => ({
+        invoice_id: invoice.id,
+        sr_no: item.sr_no,
+        item_name: item.item_name,
+        description: item.description,
+        hsn_code: item.hsn_code,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount,
+        gst_rate: item.gst_rate,
+        gst_amount: item.gst_amount,
+      }));
+
+      const { error: invoiceItemsError } = await supabase
+        .from('invoice_items')
+        .insert(invoiceItems);
+
+      if (invoiceItemsError) throw invoiceItemsError;
+
       toast({
         title: "Success",
-        description: "Quotation converted to Proforma Invoice",
+        description: `Quotation saved and Proforma Invoice ${invoiceNo} created successfully`,
       });
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error converting to proforma invoice:', error);
       toast({

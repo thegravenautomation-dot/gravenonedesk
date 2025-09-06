@@ -557,6 +557,7 @@ export type Database = {
           id: string
           invoice_date: string | null
           invoice_no: string
+          invoice_type: Database["public"]["Enums"]["invoice_type"] | null
           order_id: string | null
           paid_amount: number | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
@@ -573,6 +574,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_no: string
+          invoice_type?: Database["public"]["Enums"]["invoice_type"] | null
           order_id?: string | null
           paid_amount?: number | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
@@ -589,6 +591,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_no?: string
+          invoice_type?: Database["public"]["Enums"]["invoice_type"] | null
           order_id?: string | null
           paid_amount?: number | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
@@ -1512,6 +1515,7 @@ export type Database = {
     Enums: {
       attendance_status: "present" | "absent" | "half_day" | "late"
       employee_status: "active" | "inactive" | "terminated"
+      invoice_type: "regular" | "proforma"
       lead_status:
         | "new"
         | "contacted"
@@ -1674,6 +1678,7 @@ export const Constants = {
     Enums: {
       attendance_status: ["present", "absent", "half_day", "late"],
       employee_status: ["active", "inactive", "terminated"],
+      invoice_type: ["regular", "proforma"],
       lead_status: [
         "new",
         "contacted",

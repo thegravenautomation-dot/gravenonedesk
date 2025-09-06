@@ -538,8 +538,8 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
         <TabsContent value="invoices">
           <Card>
             <CardHeader>
-              <CardTitle>Invoices</CardTitle>
-              <CardDescription>All invoices for this customer</CardDescription>
+              <CardTitle>Invoices & Proforma Invoices</CardTitle>
+              <CardDescription>All invoices and proforma invoices for this customer</CardDescription>
             </CardHeader>
             <CardContent>
               {invoices.length > 0 ? (
@@ -547,6 +547,7 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Invoice No</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Paid</TableHead>
@@ -559,6 +560,11 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell className="font-medium">{invoice.invoice_no}</TableCell>
+                        <TableCell>
+                          <Badge variant={invoice.invoice_type === 'proforma' ? 'secondary' : 'default'}>
+                            {invoice.invoice_type === 'proforma' ? 'Proforma' : 'Invoice'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                         <TableCell>₹{invoice.total_amount?.toLocaleString()}</TableCell>
                         <TableCell>₹{invoice.paid_amount?.toLocaleString()}</TableCell>
@@ -567,7 +573,12 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
                         </TableCell>
                         <TableCell>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : "N/A"}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">View</Button>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">View</Button>
+                            {invoice.invoice_type === 'proforma' && (
+                              <Button variant="outline" size="sm">Convert to Invoice</Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

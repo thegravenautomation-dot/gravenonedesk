@@ -136,6 +136,87 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
     }
   };
 
+  const convertToProformaInvoice = async () => {
+    try {
+      setLoading(true);
+      
+      // Generate proforma invoice number
+      const { data: lastInvoice } = await supabase
+        .from('invoices')
+        .select('invoice_no')
+        .eq('branch_id', profile?.branch_id)
+        .eq('invoice_type', 'proforma')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let nextNumber = 1;
+      if (lastInvoice && lastInvoice.length > 0) {
+        const lastNumber = lastInvoice[0].invoice_no.match(/\d+$/);
+        if (lastNumber) {
+          nextNumber = parseInt(lastNumber[0]) + 1;
+        }
+      }
+
+      const invoiceNo = `PI-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
+
+      // Create proforma invoice
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          invoice_no: invoiceNo,
+          invoice_type: 'proforma',
+          customer_id: quotationData.customer_id,
+          branch_id: profile?.branch_id,
+          subtotal: quotationData.subtotal,
+          tax_amount: quotationData.tax_amount,
+          total_amount: quotationData.total_amount,
+          payment_status: 'pending',
+          invoice_date: new Date().toISOString().split('T')[0]
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      // Create invoice items from quotation items
+      const invoiceItems = quotationItems.map(item => ({
+        invoice_id: invoice.id,
+        sr_no: item.sr_no,
+        item_name: item.item_name,
+        description: item.description,
+        hsn_code: item.hsn_code,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount,
+        gst_rate: item.gst_rate,
+        gst_amount: item.gst_amount
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('invoice_items')
+        .insert(invoiceItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: "Success",
+        description: `Proforma Invoice ${invoiceNo} created successfully`,
+      });
+
+      onClose();
+    } catch (error) {
+      console.error('Error converting to proforma invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert to proforma invoice",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const convertToOrder = async () => {
     try {
       setLoading(true);
@@ -262,25 +343,10 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Convert to Order
               </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Convert to Proforma Invoice
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Convert to Proforma Invoice</DialogTitle>
-                    <DialogDescription>
-                      This will create a proforma invoice based on this quotation
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="text-center py-4">
-                    <p>Proforma invoice conversion feature coming soon</p>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button variant="outline" onClick={convertToProformaInvoice} disabled={loading}>
+                <FileText className="h-4 w-4 mr-2" />
+                Convert to Proforma Invoice
+              </Button>
             </div>
           </div>
 
