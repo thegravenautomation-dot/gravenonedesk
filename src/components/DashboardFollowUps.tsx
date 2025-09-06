@@ -28,7 +28,8 @@ export function DashboardFollowUps() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data, error } = await supabase
+      // If user is admin, show all follow-ups across branches
+      const query = supabase
         .from('follow_ups')
         .select(`
           *,
@@ -36,10 +37,16 @@ export function DashboardFollowUps() {
           leads (title, lead_no),
           profiles!follow_ups_assigned_to_fkey (full_name)
         `)
-        .eq('branch_id', profile?.branch_id)
         .eq('follow_up_date', today)
         .eq('status', 'scheduled')
         .order('follow_up_time', { ascending: true });
+
+      // Admin sees all branches, others see only their branch
+      if (profile?.role !== 'admin') {
+        query.eq('branch_id', profile?.branch_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setTodaysFollowUps(data || []);
