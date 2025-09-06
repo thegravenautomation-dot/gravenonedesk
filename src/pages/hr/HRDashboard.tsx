@@ -154,28 +154,34 @@ export default function HRDashboard() {
     e.preventDefault()
     
     try {
-      const { error } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: newUser.full_name,
+      const { error, data } = await supabase.functions.invoke('employee-management', {
+        body: {
+          action: 'provision_user',
+          employeeData: {
+            email: newUser.email,
+            full_name: newUser.full_name || newUser.email.split('@')[0],
             role: newUser.role,
             branch_id: newUser.branch_id,
-            phone: newUser.phone,
-            department: newUser.department,
-            designation: newUser.designation,
-            employee_id: newUser.employee_id,
-          }
-        }
+            phone: newUser.phone || undefined,
+            department: newUser.department || undefined,
+            designation: newUser.designation || undefined,
+            joining_date: undefined,
+            employee_id: newUser.employee_id || undefined,
+          },
+          password: newUser.password,
+        },
       })
 
       if (error) throw error
 
+      const result = data?.data
+      const defaultPassword = result?.defaultPassword
+
       toast({
         title: 'Success',
-        description: 'User account created successfully. They can now login with their credentials.',
+        description: defaultPassword
+          ? `User account created and activated. Default password: ${defaultPassword}`
+          : 'User account created and activated. They can log in now.',
       })
 
       setCreateUserOpen(false)
@@ -183,7 +189,7 @@ export default function HRDashboard() {
         email: '',
         password: '',
         full_name: '',
-        role: 'executive' as const,
+        role: 'executive',
         branch_id: profile?.branch_id || '',
         phone: '',
         department: '',

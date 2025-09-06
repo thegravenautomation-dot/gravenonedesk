@@ -150,6 +150,71 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
 
+    } else if (action === 'provision_user') {
+      // Provision only an Auth user (no employee row), and link to existing employee if found
+      const user = employeeData as Partial<EmployeeData> & { employee_id?: string };
+
+      if (!user?.email || !user?.full_name || !user?.branch_id || !user?.role) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields (full_name, email, role, branch_id)' }),
+          { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      const { data: created, error: adminErr } = await supabase.auth.admin.createUser({
+        email: user.email,
+        password: password || 'TempPass123!',
+        email_confirm: true,
+        user_metadata: {
+          full_name: user.full_name,
+          role: user.role,
+          branch_id: user.branch_id,
+          department: user.department || null,
+          designation: user.designation || null,
+          employee_id: user.employee_id || null,
+          phone: user.phone || null,
+          joining_date: user.joining_date || null,
+        },
+      });
+
+      if (adminErr) {
+        console.error('Provision user error:', adminErr);
+        return new Response(
+          JSON.stringify({ error: 'Failed to provision user', details: adminErr.message }),
+          { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      // Attempt to link employee record by email or employee_id
+      try {
+        const userId = created.user.id;
+
+        // Find existing employee by email or employee_id
+        let employeeQuery = supabase
+          .from('employees')
+          .select('id')
+          .limit(1);
+
+        if (user.email) employeeQuery = employeeQuery.eq('email', user.email);
+        if (user.employee_id) employeeQuery = employeeQuery.eq('employee_id', user.employee_id);
+
+        const { data: existingEmp, error: findErr } = await employeeQuery;
+
+        if (!findErr && existingEmp && existingEmp.length > 0) {
+          await supabase
+            .from('employees')
+            .update({ profile_id: userId })
+            .eq('id', existingEmp[0].id);
+        }
+      } catch (linkErr) {
+        console.warn('Could not link employee to profile:', linkErr);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'User provisioned successfully', defaultPassword: password ? null : 'TempPass123!' }),
+        { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+
     } else if (action === 'update') {
       const employee: Partial<EmployeeData> = employeeData;
 
