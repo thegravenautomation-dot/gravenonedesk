@@ -284,6 +284,39 @@ export type Database = {
           },
         ]
       }
+      employee_data_audit: {
+        Row: {
+          access_reason: string | null
+          accessed_by: string
+          accessed_fields: string[]
+          created_at: string
+          employee_id: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+        }
+        Insert: {
+          access_reason?: string | null
+          accessed_by: string
+          accessed_fields: string[]
+          created_at?: string
+          employee_id: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Update: {
+          access_reason?: string | null
+          accessed_by?: string
+          accessed_fields?: string[]
+          created_at?: string
+          employee_id?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       employee_queries: {
         Row: {
           assigned_to: string | null
@@ -1094,6 +1127,34 @@ export type Database = {
         Args: { _employee_branch_id: string; _user_id: string }
         Returns: boolean
       }
+      get_employee_data_secure: {
+        Args: { p_employee_id?: string; p_include_sensitive?: boolean }
+        Returns: {
+          aadhaar: string
+          address: string
+          allowances: number
+          bank_account: string
+          basic_salary: number
+          branch_id: string
+          created_at: string
+          date_of_birth: string
+          department: string
+          designation: string
+          email: string
+          employee_id: string
+          full_name: string
+          hra: number
+          id: string
+          ifsc_code: string
+          joining_date: string
+          pan: string
+          phone: string
+          profile_id: string
+          reporting_manager: string
+          status: Database["public"]["Enums"]["employee_status"]
+          updated_at: string
+        }[]
+      }
       is_admin: {
         Args: { _user_id: string }
         Returns: boolean
@@ -1101,6 +1162,23 @@ export type Database = {
       is_hr_or_admin: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      log_employee_data_access: {
+        Args: {
+          p_access_reason?: string
+          p_accessed_fields: string[]
+          p_employee_id: string
+        }
+        Returns: undefined
+      }
+      mask_sensitive_employee_data: {
+        Args: {
+          p_data_type: string
+          p_is_hr_admin?: boolean
+          p_is_owner?: boolean
+          p_value: string
+        }
+        Returns: string
       }
       update_sync_status: {
         Args: {
