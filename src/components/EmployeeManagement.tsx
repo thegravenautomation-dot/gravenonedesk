@@ -115,7 +115,7 @@ export function EmployeeManagement() {
 
   const handleAddEmployee = async () => {
     try {
-      if (!newEmployee.full_name || !newEmployee.email || !newEmployee.password) {
+      if (!newEmployee.full_name || !newEmployee.email) {
         toast({
           title: "Error",
           description: "Please fill in all required fields",
@@ -136,9 +136,14 @@ export function EmployeeManagement() {
 
       if (error) throw error;
 
+      const result = data?.data;
+      const defaultPassword = result?.defaultPassword;
+
       toast({
         title: "Success",
-        description: "Employee added successfully",
+        description: defaultPassword 
+          ? `Employee added successfully. Default password: ${defaultPassword}` 
+          : "Employee added successfully",
       });
 
       setIsAddEmployeeOpen(false);
@@ -322,6 +327,9 @@ export function EmployeeManagement() {
                   onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
                   placeholder="Enter temporary password"
                 />
+                <p className="text-sm text-muted-foreground">
+                  Leave blank to use default password: TempPass123!
+                </p>
               </div>
 
               <div className="space-y-2">

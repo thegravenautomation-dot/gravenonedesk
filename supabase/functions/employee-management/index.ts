@@ -71,7 +71,9 @@ const handler = async (req: Request): Promise<Response> => {
           branch_id: employee.branch_id,
           department: employee.department,
           designation: employee.designation,
-          employee_id: employeeIdNumber
+          employee_id: employeeIdNumber,
+          phone: employee.phone,
+          joining_date: employee.joining_date
         }
       });
 
@@ -86,34 +88,11 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userData.user.id,
-          email: employee.email,
-          full_name: employee.full_name,
-          role: employee.role,
-          branch_id: employee.branch_id,
-          department: employee.department,
-          designation: employee.designation,
-          employee_id: employeeIdNumber,
-          phone: employee.phone,
-          joining_date: employee.joining_date
-        });
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        // Try to clean up the user if profile creation fails
-        await supabase.auth.admin.deleteUser(userData.user.id);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create profile', details: profileError.message }),
-          { 
-            status: 400, 
-            headers: { 'Content-Type': 'application/json', ...corsHeaders } 
-          }
-        );
-      }
+      console.log('User created successfully:', userData.user.id);
+      // Profile will be created automatically by handle_new_user trigger
+      
+      // Wait a moment for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Create employee record
       const { data: newEmployee, error: employeeError } = await supabase
@@ -145,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (employeeError) {
         console.error('Error creating employee:', employeeError);
-        // Clean up user and profile if employee creation fails
+        // Clean up user if employee creation fails
         await supabase.auth.admin.deleteUser(userData.user.id);
         return new Response(
           JSON.stringify({ error: 'Failed to create employee record', details: employeeError.message }),
@@ -162,7 +141,8 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           success: true, 
           employee: newEmployee,
-          message: 'Employee created successfully'
+          message: 'Employee created successfully',
+          defaultPassword: password ? null : 'TempPass123!'
         }),
         {
           status: 200,
