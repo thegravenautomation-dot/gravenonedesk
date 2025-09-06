@@ -1,4 +1,5 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { DashboardFollowUps } from "@/components/DashboardFollowUps";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -307,6 +308,8 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <DashboardFollowUps />
 
         {/* System Administration */}
         <Card>

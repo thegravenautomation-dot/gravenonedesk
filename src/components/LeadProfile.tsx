@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { QuotationManager } from "./QuotationManager";
 import { OrderManager } from "./OrderManager";
 import { EditableQuotationView } from "./EditableQuotationView";
+import { PaymentManager } from "./PaymentManager";
+import { CustomerLedger } from "./CustomerLedger";
+import { FollowUpManager } from "./FollowUpManager";
 import { 
   User, 
   Building2, 

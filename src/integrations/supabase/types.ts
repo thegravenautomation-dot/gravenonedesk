@@ -227,6 +227,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_ledger: {
+        Row: {
+          balance: number | null
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          credit_amount: number | null
+          customer_id: string
+          debit_amount: number | null
+          description: string
+          id: string
+          is_editable: boolean | null
+          reference_id: string | null
+          reference_type: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          balance?: number | null
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number | null
+          customer_id: string
+          debit_amount?: number | null
+          description: string
+          id?: string
+          is_editable?: boolean | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_date?: string
+          transaction_type: string
+        }
+        Update: {
+          balance?: number | null
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number | null
+          customer_id?: string
+          debit_amount?: number | null
+          description?: string
+          id?: string
+          is_editable?: boolean | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -488,6 +539,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      follow_ups: {
+        Row: {
+          assigned_to: string
+          branch_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string | null
+          follow_up_date: string
+          follow_up_time: string | null
+          id: string
+          lead_id: string | null
+          next_follow_up_date: string | null
+          notes: string | null
+          priority: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to: string
+          branch_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description?: string | null
+          follow_up_date: string
+          follow_up_time?: string | null
+          id?: string
+          lead_id?: string | null
+          next_follow_up_date?: string | null
+          notes?: string | null
+          priority?: string
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string
+          branch_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string | null
+          follow_up_date?: string
+          follow_up_time?: string | null
+          id?: string
+          lead_id?: string | null
+          next_follow_up_date?: string | null
+          notes?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -965,7 +1079,9 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          bank_name: string | null
           branch_id: string
+          cheque_number: string | null
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -974,13 +1090,19 @@ export type Database = {
           note: string | null
           order_id: string
           payment_date: string
+          payment_mode: string | null
           receipt_path: string | null
           reference: string | null
+          transaction_id: string | null
           updated_at: string
+          verification_date: string | null
+          verified_by: string | null
         }
         Insert: {
           amount: number
+          bank_name?: string | null
           branch_id: string
+          cheque_number?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -989,13 +1111,19 @@ export type Database = {
           note?: string | null
           order_id: string
           payment_date?: string
+          payment_mode?: string | null
           receipt_path?: string | null
           reference?: string | null
+          transaction_id?: string | null
           updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
         }
         Update: {
           amount?: number
+          bank_name?: string | null
           branch_id?: string
+          cheque_number?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -1004,9 +1132,13 @@ export type Database = {
           note?: string | null
           order_id?: string
           payment_date?: string
+          payment_mode?: string | null
           receipt_path?: string | null
           reference?: string | null
+          transaction_id?: string | null
           updated_at?: string
+          verification_date?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -1500,6 +1632,10 @@ export type Database = {
           p_value: string
         }
         Returns: string
+      }
+      recalculate_customer_balance: {
+        Args: { customer_uuid: string }
+        Returns: undefined
       }
       update_sync_status: {
         Args: {
