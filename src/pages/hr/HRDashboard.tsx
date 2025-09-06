@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
@@ -16,6 +16,7 @@ import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield,
 interface Employee {
   id: string
   employee_id: string
+  profile_id: string | null
   full_name: string
   email: string
   phone: string
@@ -92,6 +93,7 @@ export default function HRDashboard() {
       const transformedData = (data || []).map((emp: any) => ({
         id: emp.id,
         employee_id: emp.employee_id,
+        profile_id: emp.profile_id || null,
         full_name: emp.full_name,
         email: emp.email,
         phone: emp.phone || '',
@@ -280,6 +282,41 @@ export default function HRDashboard() {
     }
 
     try {
+      // If no linked auth profile, provision user and set this password
+      // This avoids the "Employee is not linked to an auth profile" error
+      if (!('profile_id' in selectedEmployee) || !selectedEmployee.profile_id) {
+        const { data: provisionRes, error: provisionErr } = await supabase.functions.invoke('employee-management', {
+          body: {
+            action: 'provision_user',
+            employeeData: {
+              email: selectedEmployee.email,
+              full_name: selectedEmployee.full_name,
+              role: 'executive',
+              branch_id: profile?.branch_id,
+              department: selectedEmployee.department || undefined,
+              designation: selectedEmployee.designation || undefined,
+              joining_date: selectedEmployee.joining_date || undefined,
+              employee_id: selectedEmployee.employee_id,
+              phone: selectedEmployee.phone || undefined,
+            },
+            password: resetPassword.newPassword,
+          },
+        });
+        if (provisionErr) throw provisionErr;
+
+        toast({
+          title: 'User Provisioned',
+          description: 'Account created and password set successfully.',
+        });
+
+        setResetPasswordOpen(false);
+        setSelectedEmployee(null);
+        setResetPassword({ newPassword: '', confirmPassword: '' });
+        fetchEmployees();
+        return;
+      }
+
+      // Otherwise, reset password via edge function
       const { data, error } = await supabase.functions.invoke('employee-management', {
         body: {
           action: 'reset_password',
@@ -351,7 +388,7 @@ export default function HRDashboard() {
       active: 'bg-green-100 text-green-800',
       inactive: 'bg-yellow-100 text-yellow-800',
       terminated: 'bg-red-100 text-red-800',
-    }
+    } as const
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
 
@@ -739,7 +776,7 @@ export default function HRDashboard() {
                             setSelectedEmployee(employee);
                             setResetPasswordOpen(true);
                           }}
-                        >
+>
                           <Key className="h-4 w-4" />
                         </Button>
                         {employee.status === 'active' && (
@@ -851,6 +888,11 @@ export default function HRDashboard() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                {selectedEmployee?.profile_id
+                  ? 'Set a new password for this user.'
+                  : 'This employee doesn’t have an account yet. We will create one and set this password.'}
+              </DialogDescription>
             </DialogHeader>
             {selectedEmployee && (
               <div className="space-y-4">
