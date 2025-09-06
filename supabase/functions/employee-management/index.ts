@@ -179,6 +179,69 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (adminErr) {
         console.error('Provision user error:', adminErr);
+        // Gracefully handle existing users by linking and optionally setting password
+        const code = (adminErr as any)?.code || (adminErr as any)?.error_description || '';
+        if (String(code).includes('email_exists')) {
+          try {
+            // Try to locate existing user by email via profiles first
+            let userId: string | null = null;
+            if (user.email) {
+              const { data: prof, error: profErr } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', user.email)
+                .maybeSingle();
+              if (!profErr && prof?.id) userId = prof.id;
+
+              // Fallback: scan auth users and match by email if profile not found
+              if (!userId) {
+                const { data: list, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
+                if (!listErr && list?.users?.length) {
+                  const found = list.users.find((u: any) => u.email?.toLowerCase() === user.email!.toLowerCase());
+                  if (found?.id) userId = found.id;
+                }
+              }
+            }
+
+            if (!userId) {
+              return new Response(
+                JSON.stringify({ error: 'User already exists but could not be located for linking. Please try reset_password instead.' }),
+                { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+              );
+            }
+
+            // Optionally update password if provided
+            const pwdToSet = password || newPassword;
+            if (pwdToSet) {
+              const { error: updErr } = await supabase.auth.admin.updateUserById(userId, { password: pwdToSet });
+              if (updErr) console.warn('Could not update password for existing user:', updErr);
+            }
+
+            // Link existing employee record by email or employee_id
+            try {
+              let employeeQuery = supabase.from('employees').select('id').limit(1);
+              if (user.email) employeeQuery = employeeQuery.eq('email', user.email);
+              if ((user as any).employee_id) employeeQuery = employeeQuery.eq('employee_id', (user as any).employee_id);
+              const { data: existingEmp, error: findErr } = await employeeQuery;
+              if (!findErr && existingEmp && existingEmp.length > 0) {
+                await supabase.from('employees').update({ profile_id: userId }).eq('id', existingEmp[0].id);
+              }
+            } catch (linkErr) {
+              console.warn('Link existing employee failed:', linkErr);
+            }
+
+            return new Response(
+              JSON.stringify({ success: true, message: 'User already existed; linked successfully' }),
+              { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+            );
+          } catch (linkExistingErr) {
+            console.error('Error linking existing user:', linkExistingErr);
+            return new Response(
+              JSON.stringify({ error: 'Failed to link existing user', details: String(linkExistingErr) }),
+              { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+            );
+          }
+        }
         return new Response(
           JSON.stringify({ error: 'Failed to provision user', details: adminErr.message }),
           { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -285,7 +348,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Fetch employee to get profile_id
       const { data: empRow, error: empErr } = await supabase
         .from('employees')
-        .select('id, profile_id, email')
+        .select('id, profile_id, email, full_name, branch_id, employee_id')
         .eq('id', employeeId)
         .single();
       if (empErr) {
@@ -293,8 +356,74 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(JSON.stringify({ error: 'Employee not found', details: empErr.message }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
       }
       if (!empRow?.profile_id) {
-        return new Response(JSON.stringify({ error: 'Employee is not linked to an auth profile' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        // Attempt to find or create auth user by email, then set password and link
+        try {
+          let userId: string | null = null;
+
+          // Try profiles first
+          if (empRow.email) {
+            const { data: prof, error: profErr } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', empRow.email)
+              .maybeSingle();
+            if (!profErr && prof?.id) userId = prof.id;
+          }
+
+          // Fallback: list users to find by email
+          if (!userId && empRow.email) {
+            const { data: list, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
+            if (!listErr && list?.users?.length) {
+              const found = list.users.find((u: any) => u.email?.toLowerCase() === empRow.email.toLowerCase());
+              if (found?.id) userId = found.id;
+            }
+          }
+
+          // If still not found, create the user
+          if (!userId && empRow.email) {
+            const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+              email: empRow.email,
+              password: newPassword,
+              email_confirm: true,
+              user_metadata: {
+                full_name: (empRow as any).full_name || '',
+                role: 'executive',
+                branch_id: (empRow as any).branch_id || null,
+                employee_id: (empRow as any).employee_id || null,
+              },
+            });
+            if (createErr) {
+              console.error('Create user during reset failed:', createErr);
+              return new Response(
+                JSON.stringify({ error: 'Failed to create account for employee', details: createErr.message }),
+                { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+              );
+            }
+            userId = created.user.id;
+          }
+
+          if (!userId) {
+            return new Response(JSON.stringify({ error: 'Could not locate or create user for this employee' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+          }
+
+          // Ensure password is set for located/created user
+          const { error: updErr2 } = await supabase.auth.admin.updateUserById(userId, { password: newPassword });
+          if (updErr2) {
+            console.error('Password reset (link path) error:', updErr2);
+            return new Response(JSON.stringify({ error: 'Failed to reset password', details: updErr2.message }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+          }
+
+          // Link employee to profile
+          await supabase.from('employees').update({ profile_id: userId }).eq('id', empRow.id);
+
+          return new Response(JSON.stringify({ success: true, message: 'Password set and account linked' }), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        } catch (linkErr) {
+          console.error('Error linking user during reset_password:', linkErr);
+          return new Response(JSON.stringify({ error: 'Unexpected error during password reset' }), { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+        }
       }
+
+      // Standard path when profile_id exists
       const { error: updErr } = await supabase.auth.admin.updateUserById(empRow.profile_id, { password: newPassword });
       if (updErr) {
         console.error('Password reset error:', updErr);
