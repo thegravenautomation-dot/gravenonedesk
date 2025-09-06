@@ -16,7 +16,9 @@ interface QuotationItem {
 }
 
 interface QuotationData {
-  quotation_no: string;
+  quotation_no?: string;
+  order_no?: string;
+  invoice_no?: string;
   valid_till?: string;
   terms?: string;
   subtotal: number;
@@ -55,13 +57,15 @@ interface QuotationTemplateProps {
   items: QuotationItem[];
   branchData: BranchData | null;
   customerData: CustomerData | null;
+  templateType?: 'quotation' | 'order' | 'invoice';
 }
 
 export function QuotationTemplate({ 
   quotationData, 
   items, 
   branchData, 
-  customerData 
+  customerData,
+  templateType = 'quotation'
 }: QuotationTemplateProps) {
   const currentDate = new Date().toLocaleDateString('en-IN');
 
@@ -79,12 +83,16 @@ export function QuotationTemplate({
         </div>
       </div>
 
-      {/* Quotation Header */}
+      {/* Document Header */}
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">QUOTATION</h2>
+        <h2 className="text-2xl font-bold mb-2">
+          {templateType === 'order' ? 'PURCHASE ORDER' : templateType === 'invoice' ? 'INVOICE' : 'QUOTATION'}
+        </h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="text-left">
-            <p><strong>Quotation No:</strong> {quotationData.quotation_no}</p>
+              <p><strong>
+                {templateType === 'order' ? 'Order No:' : templateType === 'invoice' ? 'Invoice No:' : 'Quotation No:'}
+              </strong> {quotationData.quotation_no || quotationData.order_no || quotationData.invoice_no}</p>
             <p><strong>Date:</strong> {currentDate}</p>
           </div>
           <div className="text-right">

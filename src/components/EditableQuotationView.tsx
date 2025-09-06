@@ -1,0 +1,346 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { QuotationTemplate } from "./QuotationTemplate";
+import { Edit, History, Download, FileText, ShoppingCart, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Timeline, TimelineContent, TimelineItem, TimelinePoint } from "@/components/ui/timeline";
+
+interface EditableQuotationViewProps {
+  quotationId: string;
+  onClose: () => void;
+  onEdit?: () => void;
+}
+
+export function EditableQuotationView({ quotationId, onClose, onEdit }: EditableQuotationViewProps) {
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [quotationData, setQuotationData] = useState<any>(null);
+  const [quotationItems, setQuotationItems] = useState<any[]>([]);
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [branchData, setBranchData] = useState<any>(null);
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (quotationId && profile?.branch_id) {
+      fetchQuotationData();
+      fetchRevisions();
+    }
+  }, [quotationId, profile?.branch_id]);
+
+  const fetchQuotationData = async () => {
+    try {
+      // Fetch quotation with customer info
+      const { data: quotation, error: quotationError } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (*)
+        `)
+        .eq('id', quotationId)
+        .eq('branch_id', profile?.branch_id)
+        .single();
+
+      if (quotationError) throw quotationError;
+
+      // Fetch quotation items
+      const { data: items, error: itemsError } = await supabase
+        .from('quotation_items')
+        .select('*')
+        .eq('quotation_id', quotationId)
+        .order('sr_no');
+
+      if (itemsError) throw itemsError;
+
+      // Fetch branch data
+      const { data: branch, error: branchError } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('id', profile?.branch_id)
+        .single();
+
+      if (branchError) throw branchError;
+
+      setQuotationData(quotation);
+      setQuotationItems(items || []);
+      setBranchData(branch);
+      setCustomerData(quotation.customers);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch quotation data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRevisions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quotation_revisions')
+        .select('*')
+        .eq('quotation_id', quotationId)
+        .order('revision_no', { ascending: false });
+
+      if (error) throw error;
+      setRevisions(data || []);
+    } catch (error) {
+      console.error('Error fetching revisions:', error);
+    }
+  };
+
+  const saveRevision = async (note: string) => {
+    try {
+      const nextRevisionNo = (revisions[0]?.revision_no || 0) + 1;
+      
+      const { error } = await supabase
+        .from('quotation_revisions')
+        .insert({
+          quotation_id: quotationId,
+          revision_no: nextRevisionNo,
+          snapshot: {
+            quotation: quotationData,
+            items: quotationItems,
+            timestamp: new Date().toISOString()
+          },
+          note,
+          created_by: profile?.id
+        });
+
+      if (error) throw error;
+      
+      await fetchRevisions();
+      
+      toast({
+        title: "Success",
+        description: "Revision saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving revision:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save revision",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const convertToOrder = async () => {
+    try {
+      setLoading(true);
+      
+      // Generate order number
+      const { data: lastOrder } = await supabase
+        .from('orders')
+        .select('order_no')
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let nextNumber = 1;
+      if (lastOrder && lastOrder.length > 0) {
+        const lastNumber = lastOrder[0].order_no.match(/\d+$/);
+        if (lastNumber) {
+          nextNumber = parseInt(lastNumber[0]) + 1;
+        }
+      }
+
+      const orderNo = `ORD-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          order_no: orderNo,
+          quotation_id: quotationId,
+          customer_id: quotationData.customer_id,
+          branch_id: profile?.branch_id,
+          subtotal: quotationData.subtotal,
+          tax_amount: quotationData.tax_amount,
+          total_amount: quotationData.total_amount,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items from quotation items
+      const orderItems = quotationItems.map(item => ({
+        order_id: order.id,
+        sr_no: item.sr_no,
+        item_name: item.item_name,
+        description: item.description,
+        hsn_code: item.hsn_code,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount,
+        gst_rate: item.gst_rate,
+        gst_amount: item.gst_amount
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: "Success",
+        description: "Quotation converted to order successfully",
+      });
+
+      onClose();
+    } catch (error) {
+      console.error('Error converting to order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert quotation to order",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center p-8">Loading...</div>;
+  }
+
+  if (!quotationData) {
+    return <div className="flex items-center justify-center p-8">Quotation not found</div>;
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quotation {quotationData.quotation_no}</h1>
+          <p className="text-muted-foreground">Customer: {customerData?.name}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{quotationData.status}</Badge>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="view" className="w-full">
+        <TabsList>
+          <TabsTrigger value="view">View</TabsTrigger>
+          <TabsTrigger value="history">Edit History</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="view" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsEditMode(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Quotation
+              </Button>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={convertToOrder} disabled={loading}>
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Convert to Order
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Convert to Proforma Invoice
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Convert to Proforma Invoice</DialogTitle>
+                    <DialogDescription>
+                      This will create a proforma invoice based on this quotation
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="text-center py-4">
+                    <p>Proforma invoice conversion feature coming soon</p>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <QuotationTemplate
+                quotationData={quotationData}
+                items={quotationItems}
+                branchData={branchData}
+                customerData={customerData}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Edit History
+              </CardTitle>
+              <CardDescription>
+                Track all changes made to this quotation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {revisions.length > 0 ? (
+                <Timeline>
+                  {revisions.map((revision, index) => (
+                    <TimelineItem key={revision.id}>
+                      <TimelinePoint />
+                      <TimelineContent>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">Revision {revision.revision_no}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(revision.created_at).toLocaleString()}
+                            </p>
+                            {revision.note && (
+                              <p className="text-sm mt-1">{revision.note}</p>
+                            )}
+                          </div>
+                          <Button variant="outline" size="sm">
+                            View Snapshot
+                          </Button>
+                        </div>
+                      </TimelineContent>
+                    </TimelineItem>
+                  ))}
+                </Timeline>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No edit history available
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

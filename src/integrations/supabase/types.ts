@@ -888,10 +888,12 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           customer_id: string | null
+          customer_po_no: string | null
           delivery_date: string | null
           id: string
           order_date: string | null
           order_no: string
+          po_pdf_path: string | null
           quotation_id: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           subtotal: number | null
@@ -903,10 +905,12 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           customer_id?: string | null
+          customer_po_no?: string | null
           delivery_date?: string | null
           id?: string
           order_date?: string | null
           order_no: string
+          po_pdf_path?: string | null
           quotation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
@@ -918,10 +922,12 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           customer_id?: string | null
+          customer_po_no?: string | null
           delivery_date?: string | null
           id?: string
           order_date?: string | null
           order_no?: string
+          po_pdf_path?: string | null
           quotation_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
@@ -949,6 +955,69 @@ export type Database = {
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          method: string | null
+          note: string | null
+          order_id: string
+          payment_date: string
+          receipt_path: string | null
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          method?: string | null
+          note?: string | null
+          order_id: string
+          payment_date?: string
+          receipt_path?: string | null
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          method?: string | null
+          note?: string | null
+          order_id?: string
+          payment_date?: string
+          receipt_path?: string | null
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1131,6 +1200,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          quotation_id: string
+          revision_no: number
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          quotation_id: string
+          revision_no: number
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          quotation_id?: string
+          revision_no?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_revisions_quotation_id_fkey"
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"

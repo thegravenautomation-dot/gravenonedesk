@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { QuotationManager } from "./QuotationManager";
+import { OrderManager } from "./OrderManager";
+import { EditableQuotationView } from "./EditableQuotationView";
 import { 
   User, 
   Building2, 
@@ -80,6 +82,9 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [isQuotationDialogOpen, setIsQuotationDialogOpen] = useState(false);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
+  const [isQuotationViewOpen, setIsQuotationViewOpen] = useState(false);
   
   const [editForm, setEditForm] = useState({
     name: "",
@@ -227,6 +232,16 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const handleViewQuotation = (quotationId: string) => {
+    setSelectedQuotationId(quotationId);
+    setIsQuotationViewOpen(true);
+  };
+
+  const handleConvertToOrder = (quotationId: string) => {
+    setSelectedQuotationId(quotationId);
+    setIsOrderDialogOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -454,8 +469,12 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
                         <TableCell>{quotation.valid_till ? new Date(quotation.valid_till).toLocaleDateString() : "N/A"}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">View</Button>
-                            <Button variant="outline" size="sm">Convert to PO</Button>
+            <Button variant="outline" size="sm" onClick={() => handleViewQuotation(quotation.id)}>
+              View
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleConvertToOrder(quotation.id)}>
+              Convert to Order
+            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -686,6 +705,22 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quotation View Dialog */}
+      {isQuotationViewOpen && selectedQuotationId && (
+        <Dialog open={isQuotationViewOpen} onOpenChange={setIsQuotationViewOpen}>
+          <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+            <EditableQuotationView 
+              quotationId={selectedQuotationId}
+              onClose={() => {
+                setIsQuotationViewOpen(false);
+                setSelectedQuotationId(null);
+                fetchQuotations();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
