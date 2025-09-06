@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { QuotationTemplate } from "./QuotationTemplate";
-import { Edit, History, Download, FileText, ShoppingCart, DollarSign } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Edit, History, Download, FileText, ShoppingCart } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Timeline, TimelineContent, TimelineItem, TimelinePoint } from "@/components/ui/timeline";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface EditableQuotationViewProps {
   quotationId: string;
@@ -28,6 +29,8 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
   const [branchData, setBranchData] = useState<any>(null);
   const [customerData, setCustomerData] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editData, setEditData] = useState<{ valid_till: string; terms: string }>({ valid_till: "", terms: "" });
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (quotationId && profile?.branch_id) {
@@ -296,9 +299,41 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center p-8">Loading...</div>;
-  }
+  const handlePrint = () => {
+    try {
+      const content = printRef.current?.innerHTML;
+      if (!content) return;
+      const printWindow = window.open('', '', 'width=1024,height=768');
+      if (!printWindow) return;
+      printWindow.document.write(`<!doctype html><html><head><title>Quotation ${quotationData.quotation_no}</title><meta name="viewport" content="width=device-width, initial-scale=1"/><style>@page{size:A4;margin:12mm;}body{font-family:ui-sans-serif,system-ui;}</style></head><body>${content}</body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    } catch (e) {
+      console.error('Print failed', e);
+      toast({ title: 'Error', description: 'Failed to open print dialog', variant: 'destructive' });
+    }
+  };
+
+  const saveEdits = async () => {
+    try {
+      await saveRevision('Edited quotation details');
+      const { error } = await supabase
+        .from('quotations')
+        .update({
+          valid_till: editData.valid_till || null,
+          terms: editData.terms
+        })
+        .eq('id', quotationId);
+      if (error) throw error;
+      await fetchQuotationData();
+      setIsEditMode(false);
+      toast({ title: 'Saved', description: 'Quotation updated' });
+    } catch (error) {
+      console.error('Save edits error', error);
+      toast({ title: 'Error', description: 'Failed to save changes', variant: 'destructive' });
+    }
+  };
 
   if (!quotationData) {
     return <div className="flex items-center justify-center p-8">Quotation not found</div>;
@@ -328,14 +363,27 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
         <TabsContent value="view" className="space-y-6">
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditMode(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Quotation
-              </Button>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
+              {!isEditMode ? (
+                <>
+                  <Button variant="outline" onClick={() => { setIsEditMode(true); setEditData({ valid_till: (quotationData.valid_till ? new Date(quotationData.valid_till).toISOString().slice(0,10) : ''), terms: quotationData.terms || '' }); }}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Quotation
+                  </Button>
+                  <Button variant="outline" onClick={handlePrint}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Print / PDF
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setIsEditMode(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveEdits}>
+                    Save Changes
+                  </Button>
+                </>
+              )}
             </div>
             
             <div className="flex gap-2">
@@ -350,16 +398,39 @@ export function EditableQuotationView({ quotationId, onClose, onEdit }: Editable
             </div>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              <QuotationTemplate
-                quotationData={quotationData}
-                items={quotationItems}
-                branchData={branchData}
-                customerData={customerData}
-              />
-            </CardContent>
-          </Card>
+          {!isEditMode ? (
+            <Card>
+              <CardContent className="p-0">
+                <div ref={printRef}>
+                  <QuotationTemplate
+                    quotationData={quotationData}
+                    items={quotationItems}
+                    branchData={branchData}
+                    customerData={customerData}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Quotation</CardTitle>
+                <CardDescription>Update key details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="valid_till">Valid Till</Label>
+                    <Input id="valid_till" type="date" value={editData.valid_till} onChange={(e) => setEditData({ ...editData, valid_till: e.target.value })} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="terms">Terms</Label>
+                    <Input id="terms" value={editData.terms} onChange={(e) => setEditData({ ...editData, terms: e.target.value })} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="history">

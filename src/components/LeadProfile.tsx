@@ -720,13 +720,14 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
       {/* Quotation View Dialog */}
       {isQuotationViewOpen && selectedQuotationId && (
         <Dialog open={isQuotationViewOpen} onOpenChange={setIsQuotationViewOpen}>
-          <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+          <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
             <EditableQuotationView 
               quotationId={selectedQuotationId}
               onClose={() => {
                 setIsQuotationViewOpen(false);
                 setSelectedQuotationId(null);
                 fetchQuotations();
+                fetchOrders();
               }}
             />
           </DialogContent>
