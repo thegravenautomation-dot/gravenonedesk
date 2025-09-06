@@ -722,323 +722,334 @@ export function LeadManagement() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 border rounded-lg px-3 py-2 bg-muted/50">
-            <Activity className={`h-4 w-4 ${
-              syncStatus === 'syncing' ? 'text-blue-500 animate-pulse' :
-              syncStatus === 'error' ? 'text-red-500' :
-              syncStatus === 'rate_limited' ? 'text-yellow-500' :
-              autoSyncEnabled ? 'text-green-500' : 'text-gray-400'
-            }`} />
-            <span className="text-sm text-muted-foreground">
-              {syncStatus === 'syncing' ? 'Syncing...' :
-               syncStatus === 'error' ? 'Sync Error' :
-               syncStatus === 'rate_limited' ? 'Rate Limited' :
-               autoSyncEnabled ? 'Live Monitoring' : 'Offline'}
-            </span>
-            {lastSyncTime && (
-              <span className="text-xs text-muted-foreground">
-                Last: {lastSyncTime.toLocaleTimeString()}
+          {/* Status indicator - only show for admin and manager */}
+          {(profile?.role === 'admin' || profile?.role === 'manager') && (
+            <div className="flex items-center space-x-2 border rounded-lg px-3 py-2 bg-muted/50">
+              <Activity className={`h-4 w-4 ${
+                syncStatus === 'syncing' ? 'text-blue-500 animate-pulse' :
+                syncStatus === 'error' ? 'text-red-500' :
+                syncStatus === 'rate_limited' ? 'text-yellow-500' :
+                autoSyncEnabled ? 'text-green-500' : 'text-gray-400'
+              }`} />
+              <span className="text-sm text-muted-foreground">
+                {syncStatus === 'syncing' ? 'Syncing...' :
+                 syncStatus === 'error' ? 'Sync Error' :
+                 syncStatus === 'rate_limited' ? 'Rate Limited' :
+                 autoSyncEnabled ? 'Live Monitoring' : 'Offline'}
               </span>
-            )}
-            {(lastIndiaMartSync || lastTradeIndiaSync) && (
-              <div className="text-xs text-muted-foreground border-l pl-2">
-                {lastIndiaMartSync && `IM: ${lastIndiaMartSync.toLocaleTimeString()}`}
-                {lastIndiaMartSync && lastTradeIndiaSync && ' | '}
-                {lastTradeIndiaSync && `TI: ${lastTradeIndiaSync.toLocaleTimeString()}`}
-              </div>
-            )}
-          </div>
+              {lastSyncTime && (
+                <span className="text-xs text-muted-foreground">
+                  Last: {lastSyncTime.toLocaleTimeString()}
+                </span>
+              )}
+              {(lastIndiaMartSync || lastTradeIndiaSync) && (
+                <div className="text-xs text-muted-foreground border-l pl-2">
+                  {lastIndiaMartSync && `IM: ${lastIndiaMartSync.toLocaleTimeString()}`}
+                  {lastIndiaMartSync && lastTradeIndiaSync && ' | '}
+                  {lastTradeIndiaSync && `TI: ${lastTradeIndiaSync.toLocaleTimeString()}`}
+                </div>
+              )}
+            </div>
+          )}
 
-          <Button
-            variant="outline"
-            onClick={handleSyncIndiaMART}
-            disabled={isSyncingLeads}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
-            Sync IndiaMART
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleSyncTradeIndia}
-            disabled={isSyncingLeads}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
-            Sync TradeIndia
-          </Button>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Zap className="h-4 w-4 mr-2" />
-                Real-time Settings
+          {/* Sync and Settings buttons - only for admin and manager */}
+          {(profile?.role === 'admin' || profile?.role === 'manager') && (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSyncIndiaMART}
+                disabled={isSyncingLeads}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
+                Sync IndiaMART
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Real-time Sync Settings</DialogTitle>
-                <DialogDescription>
-                  Configure automatic synchronization from all lead sources
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">Enable Auto-sync</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically sync leads from all sources at regular intervals
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={autoSyncEnabled} 
-                    onCheckedChange={setAutoSyncEnabled}
-                  />
-                </div>
 
-                {autoSyncEnabled && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Check Interval (minutes)</Label>
-                    <Select value={syncInterval.toString()} onValueChange={(value) => setSyncInterval(Number(value))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Every 1 minute (Recommended)</SelectItem>
-                        <SelectItem value="2">Every 2 minutes</SelectItem>
-                        <SelectItem value="5">Every 5 minutes</SelectItem>
-                        <SelectItem value="15">Every 15 minutes</SelectItem>
-                        <SelectItem value="30">Every 30 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      System intelligently respects API rate limits while checking frequently
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Sync Status</Label>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {syncStatuses.map(status => {
-                        const isRateLimited = status.rate_limit_until && new Date(status.rate_limit_until) > new Date();
-                        const nextSync = status.next_sync_at ? new Date(status.next_sync_at) : null;
-                        const canSyncNow = !isRateLimited && (!nextSync || nextSync <= new Date());
-                        
-                        return (
-                          <div key={status.source_name} className="p-2 border rounded bg-muted/30">
-                            <div className="font-medium flex items-center gap-1">
-                              {status.source_name === 'indiamart' ? 'IndiaMART' : 'TradeIndia'}
-                              <div className={`w-2 h-2 rounded-full ${
-                                isRateLimited ? 'bg-red-500' :
-                                status.last_error ? 'bg-yellow-500' :
-                                canSyncNow ? 'bg-green-500' : 'bg-blue-500'
-                              }`} />
-                            </div>
-                            <div className="text-muted-foreground">
-                              {status.last_sync_at ? 
-                                `Last: ${new Date(status.last_sync_at).toLocaleTimeString()}` : 
-                                'Never synced'
-                              }
-                            </div>
-                            {isRateLimited && (
-                              <div className="text-red-500 text-xs">
-                                Rate limited until {new Date(status.rate_limit_until).toLocaleTimeString()}
-                              </div>
-                            )}
-                            {nextSync && !isRateLimited && (
-                              <div className="text-muted-foreground text-xs">
-                                Next: {nextSync.toLocaleTimeString()}
-                              </div>
-                            )}
-                            {status.last_error && (
-                              <div className="text-yellow-600 text-xs truncate" title={status.last_error}>
-                                Error: {status.last_error.substring(0, 20)}...
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                )}
+              <Button
+                variant="outline"
+                onClick={handleSyncTradeIndia}
+                disabled={isSyncingLeads}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingLeads ? 'animate-spin' : ''}`} />
+                Sync TradeIndia
+              </Button>
 
-                <div className="pt-2 space-y-2">
-                  <Button 
-                    onClick={performIntelligentSync} 
-                    className="w-full"
-                    disabled={syncStatus === 'syncing'}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-                    Force Sync Now
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Real-time Settings
                   </Button>
-                  <p className="text-xs text-center text-muted-foreground">
-                    {syncStatus === 'syncing' ? 'Syncing in progress...' :
-                     syncStatus === 'rate_limited' ? 'Some sources rate limited' :
-                     'Manual sync ignores rate limits'}
-                  </p>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isAssignmentRulesOpen} onOpenChange={setIsAssignmentRulesOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Assignment Rules
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Lead Assignment Rules</DialogTitle>
-                <DialogDescription>
-                  Configure automatic lead assignment based on conditions
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Add New Rule</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Rule Name</Label>
-                        <Input
-                          value={newRule.name}
-                          onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
-                          placeholder="Enter rule name"
-                        />
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Real-time Sync Settings</DialogTitle>
+                    <DialogDescription>
+                      Configure automatic synchronization from all lead sources
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-base">Enable Auto-sync</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Automatically sync leads from all sources at regular intervals
+                        </p>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label>Assign To</Label>
-                        <Select value={newRule.assigned_to} onValueChange={(value) => setNewRule({ ...newRule, assigned_to: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select employee" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employees.map((emp) => (
-                              <SelectItem key={emp.id} value={emp.id}>
-                                {emp.full_name} ({emp.role})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Priority</Label>
-                        <Input
-                          type="number"
-                          value={newRule.priority}
-                          onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) })}
-                          placeholder="Priority (1 = highest)"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Source Filter</Label>
-                        <Select 
-                          value={newRule.conditions.source} 
-                          onValueChange={(value) => setNewRule({ 
-                            ...newRule, 
-                            conditions: { ...newRule.conditions, source: value }
-                          })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Filter by source" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="any">Any Source</SelectItem>
-                            <SelectItem value="indiamart">IndiaMART</SelectItem>
-                            <SelectItem value="tradeindia">TradeIndia</SelectItem>
-                            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                            <SelectItem value="website">Website</SelectItem>
-                            <SelectItem value="manual">Manual</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Min Value</Label>
-                        <Input
-                          type="number"
-                          value={newRule.conditions.value_min}
-                          onChange={(e) => setNewRule({ 
-                            ...newRule, 
-                            conditions: { ...newRule.conditions, value_min: parseFloat(e.target.value) || 0 }
-                          })}
-                          placeholder="Minimum lead value"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Max Value</Label>
-                        <Input
-                          type="number"
-                          value={newRule.conditions.value_max}
-                          onChange={(e) => setNewRule({ 
-                            ...newRule, 
-                            conditions: { ...newRule.conditions, value_max: parseFloat(e.target.value) || 0 }
-                          })}
-                          placeholder="Maximum lead value (0 = no limit)"
-                        />
-                      </div>
+                      <Switch 
+                        checked={autoSyncEnabled} 
+                        onCheckedChange={setAutoSyncEnabled}
+                      />
                     </div>
 
-                    <Button onClick={handleAddAssignmentRule} className="mt-4">
-                      Add Rule
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Current Rules</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Priority</TableHead>
-                          <TableHead>Rule Name</TableHead>
-                          <TableHead>Assigned To</TableHead>
-                          <TableHead>Conditions</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {assignmentRules.map((rule) => (
-                          <TableRow key={rule.id}>
-                            <TableCell>{rule.priority}</TableCell>
-                            <TableCell>{rule.name}</TableCell>
-                            <TableCell>{rule.profiles?.full_name}</TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                {rule.conditions.source && rule.conditions.source !== "any" && <div>Source: {rule.conditions.source}</div>}
-                                {rule.conditions.value_min > 0 && <div>Min: ₹{rule.conditions.value_min}</div>}
-                                {rule.conditions.value_max > 0 && <div>Max: ₹{rule.conditions.value_max}</div>}
+                    {autoSyncEnabled && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Check Interval (minutes)</Label>
+                        <Select value={syncInterval.toString()} onValueChange={(value) => setSyncInterval(Number(value))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">Every 1 minute (Recommended)</SelectItem>
+                            <SelectItem value="2">Every 2 minutes</SelectItem>
+                            <SelectItem value="5">Every 5 minutes</SelectItem>
+                            <SelectItem value="15">Every 15 minutes</SelectItem>
+                            <SelectItem value="30">Every 30 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          System intelligently respects API rate limits while checking frequently
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Sync Status</Label>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {syncStatuses.map(status => {
+                            const isRateLimited = status.rate_limit_until && new Date(status.rate_limit_until) > new Date();
+                            const nextSync = status.next_sync_at ? new Date(status.next_sync_at) : null;
+                            const canSyncNow = !isRateLimited && (!nextSync || nextSync <= new Date());
+                            
+                            return (
+                              <div key={status.source_name} className="p-2 border rounded bg-muted/30">
+                                <div className="font-medium flex items-center gap-1">
+                                  {status.source_name === 'indiamart' ? 'IndiaMART' : 'TradeIndia'}
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    isRateLimited ? 'bg-red-500' :
+                                    status.last_error ? 'bg-yellow-500' :
+                                    canSyncNow ? 'bg-green-500' : 'bg-blue-500'
+                                  }`} />
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {status.last_sync_at ? 
+                                    `Last: ${new Date(status.last_sync_at).toLocaleTimeString()}` : 
+                                    'Never synced'
+                                  }
+                                </div>
+                                {isRateLimited && (
+                                  <div className="text-red-500 text-xs">
+                                    Rate limited until {new Date(status.rate_limit_until).toLocaleTimeString()}
+                                  </div>
+                                )}
+                                {nextSync && !isRateLimited && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Next: {nextSync.toLocaleTimeString()}
+                                  </div>
+                                )}
+                                {status.last_error && (
+                                  <div className="text-yellow-600 text-xs truncate" title={status.last_error}>
+                                    Error: {status.last_error.substring(0, 20)}...
+                                  </div>
+                                )}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                                {rule.is_active ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-            </DialogContent>
-          </Dialog>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    )}
 
+                    <div className="pt-2 space-y-2">
+                      <Button 
+                        onClick={performIntelligentSync} 
+                        className="w-full"
+                        disabled={syncStatus === 'syncing'}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                        Force Sync Now
+                      </Button>
+                      <p className="text-xs text-center text-muted-foreground">
+                        {syncStatus === 'syncing' ? 'Syncing in progress...' :
+                         syncStatus === 'rate_limited' ? 'Some sources rate limited' :
+                         'Manual sync ignores rate limits'}
+                      </p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isAssignmentRulesOpen} onOpenChange={setIsAssignmentRulesOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Assignment Rules
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Lead Assignment Rules</DialogTitle>
+                    <DialogDescription>
+                      Configure automatic lead assignment based on conditions
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Add New Rule</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Rule Name</Label>
+                            <Input
+                              value={newRule.name}
+                              onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
+                              placeholder="Enter rule name"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Assign To</Label>
+                            <Select value={newRule.assigned_to} onValueChange={(value) => setNewRule({ ...newRule, assigned_to: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select employee" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {employees.map((emp) => (
+                                  <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.full_name} ({emp.role})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Priority</Label>
+                            <Input
+                              type="number"
+                              value={newRule.priority}
+                              onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) })}
+                              placeholder="Priority (1 = highest)"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Source Filter</Label>
+                            <Select 
+                              value={newRule.conditions.source} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, source: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select source" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="any">Any Source</SelectItem>
+                                {leadSources.map((source) => (
+                                  <SelectItem key={source.id} value={source.name}>
+                                    {source.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Minimum Value</Label>
+                            <Input
+                              type="number"
+                              value={newRule.conditions.value_min}
+                              onChange={(e) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, value_min: parseFloat(e.target.value) || 0 }
+                              })}
+                              placeholder="Minimum lead value"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Maximum Value</Label>
+                            <Input
+                              type="number"
+                              value={newRule.conditions.value_max}
+                              onChange={(e) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, value_max: parseFloat(e.target.value) || 0 }
+                              })}
+                              placeholder="Maximum lead value"
+                            />
+                          </div>
+
+                          <div className="col-span-2">
+                            <Button onClick={handleAddAssignmentRule} className="w-full">
+                              Add Rule
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Current Rules</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Priority</TableHead>
+                              <TableHead>Rule Name</TableHead>
+                              <TableHead>Assigned To</TableHead>
+                              <TableHead>Conditions</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {assignmentRules.map((rule) => (
+                              <TableRow key={rule.id}>
+                                <TableCell>{rule.priority}</TableCell>
+                                <TableCell>{rule.name}</TableCell>
+                                <TableCell>{rule.profiles?.full_name}</TableCell>
+                                <TableCell>
+                                  <div className="text-sm">
+                                    {rule.conditions.source && rule.conditions.source !== "any" && <div>Source: {rule.conditions.source}</div>}
+                                    {rule.conditions.value_min > 0 && <div>Min: ₹{rule.conditions.value_min}</div>}
+                                    {rule.conditions.value_max > 0 && <div>Max: ₹{rule.conditions.value_max}</div>}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                                    {rule.is_active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+
+          {/* Add Manual Lead button - available to all users */}
           <Dialog open={isManualLeadOpen} onOpenChange={setIsManualLeadOpen}>
             <DialogTrigger asChild>
               <Button>
