@@ -26,7 +26,9 @@ import {
   CreditCard, 
   History,
   MessageSquare,
-  MessageCircle
+  MessageCircle,
+  Package,
+  DollarSign
 } from "lucide-react";
 
 interface LeadProfileProps {
@@ -80,6 +82,8 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [activityHistory, setActivityHistory] = useState<any[]>([]);
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [isQuotationDialogOpen, setIsQuotationDialogOpen] = useState(false);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
@@ -101,11 +105,23 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   useEffect(() => {
     if (leadId && profile?.branch_id) {
       fetchLeadData();
+    }
+  }, [leadId, profile?.branch_id]);
+
+  useEffect(() => {
+    if (leadData?.customers?.id && profile?.branch_id) {
       fetchQuotations();
       fetchOrders();
       fetchInvoices();
+      fetchPayments();
     }
-  }, [leadId, profile?.branch_id]);
+  }, [leadData?.customers?.id, profile?.branch_id]);
+
+  useEffect(() => {
+    if (quotations.length >= 0 || orders.length >= 0 || payments.length >= 0 || invoices.length >= 0) {
+      buildActivityHistory();
+    }
+  }, [quotations, orders, payments, invoices]);
 
   const fetchLeadData = async () => {
     try {
@@ -149,6 +165,8 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   };
 
   const fetchQuotations = async () => {
+    if (!leadData?.customers?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('quotations')
@@ -165,10 +183,15 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   };
 
   const fetchOrders = async () => {
+    if (!leadData?.customers?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          payments (*)
+        `)
         .eq('customer_id', leadData?.customers?.id)
         .eq('branch_id', profile?.branch_id)
         .order('created_at', { ascending: false });
@@ -181,6 +204,8 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
   };
 
   const fetchInvoices = async () => {
+    if (!leadData?.customers?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('invoices')
@@ -193,6 +218,75 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
       setInvoices(data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+    }
+  };
+
+  const fetchPayments = async () => {
+    if (!leadData?.customers?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          order:orders(order_no)
+        `)
+        .eq('customer_id', leadData?.customers?.id)
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPayments(data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
+
+  const buildActivityHistory = async () => {
+    try {
+      const activities: any[] = [];
+      
+      // Add quotations to history
+      quotations.forEach((quotation: any) => {
+        activities.push({
+          type: 'quotation',
+          description: `Quotation ${quotation.quotation_no} created - ₹${quotation.total_amount?.toLocaleString()}`,
+          date: quotation.created_at
+        });
+      });
+
+      // Add orders to history
+      orders.forEach((order: any) => {
+        activities.push({
+          type: 'order',
+          description: `Order ${order.order_no} created - ₹${order.total_amount?.toLocaleString()}`,
+          date: order.created_at
+        });
+      });
+
+      // Add payments to history
+      payments.forEach((payment: any) => {
+        activities.push({
+          type: 'payment',
+          description: `Payment received - ₹${payment.amount?.toLocaleString()} for ${payment.order?.order_no}`,
+          date: payment.created_at
+        });
+      });
+
+      // Add invoices to history
+      invoices.forEach((invoice: any) => {
+        activities.push({
+          type: 'invoice',
+          description: `${invoice.invoice_type === 'proforma' ? 'Proforma Invoice' : 'Invoice'} ${invoice.invoice_no} created - ₹${invoice.total_amount?.toLocaleString()}`,
+          date: invoice.created_at
+        });
+      });
+
+      // Sort activities by date (newest first)
+      activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setActivityHistory(activities);
+    } catch (error) {
+      console.error('Error building activity history:', error);
     }
   };
 
@@ -498,34 +592,40 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
             </CardHeader>
             <CardContent>
               {orders.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order No</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Delivery Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.order_no}</TableCell>
-                        <TableCell>{new Date(order.order_date).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{order.status}</Badge>
-                        </TableCell>
-                        <TableCell>₹{order.total_amount?.toLocaleString()}</TableCell>
-                        <TableCell>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : "TBD"}</TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">View</Button>
-                        </TableCell>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order No</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Received Payment</TableHead>
+                        <TableHead>Delivery Date</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-medium">{order.order_no}</TableCell>
+                          <TableCell>{new Date(order.order_date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{order.status}</Badge>
+                          </TableCell>
+                          <TableCell>₹{order.total_amount?.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <span className="font-medium text-green-600">
+                              ₹{(order.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0).toLocaleString()}
+                            </span>
+                          </TableCell>
+                          <TableCell>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : "TBD"}</TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">View</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
                   No orders found for this customer
@@ -600,9 +700,36 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
               <CardDescription>Payment records for this customer</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                Payment tracking feature coming soon
-              </p>
+              {payments.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Order No</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Note</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium">{payment.order?.order_no}</TableCell>
+                        <TableCell className="font-medium text-green-600">₹{payment.amount?.toLocaleString()}</TableCell>
+                        <TableCell>{payment.method || "N/A"}</TableCell>
+                        <TableCell>{payment.reference || "N/A"}</TableCell>
+                        <TableCell>{payment.note || "N/A"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No payments recorded for this customer
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -614,9 +741,28 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
               <CardDescription>All activities related to this lead</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                Activity history feature coming soon
-              </p>
+              <div className="space-y-4">
+                {activityHistory.length > 0 ? (
+                  activityHistory.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-4 p-4 border rounded-lg">
+                      <div className="mt-1">
+                        {activity.type === 'quotation' && <FileText className="h-4 w-4 text-blue-500" />}
+                        {activity.type === 'order' && <Package className="h-4 w-4 text-green-500" />}
+                        {activity.type === 'payment' && <DollarSign className="h-4 w-4 text-yellow-500" />}
+                        {activity.type === 'invoice' && <FileText className="h-4 w-4 text-purple-500" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{activity.description}</p>
+                        <p className="text-sm text-muted-foreground">{new Date(activity.date).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    No activity history available
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -728,6 +874,7 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
                 setSelectedQuotationId(null);
                 fetchQuotations();
                 fetchOrders();
+                fetchPayments();
               }}
             />
           </DialogContent>
