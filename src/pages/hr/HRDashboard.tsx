@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield } from 'lucide-react'
+import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield, Edit, Key, Trash2 } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -35,6 +35,9 @@ export default function HRDashboard() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [newEmployeeOpen, setNewEmployeeOpen] = useState(false)
   const [createUserOpen, setCreateUserOpen] = useState(false)
+  const [editEmployeeOpen, setEditEmployeeOpen] = useState(false)
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const { profile } = useAuth()
   const { toast } = useToast()
 
@@ -65,20 +68,45 @@ export default function HRDashboard() {
     employee_id: '',
   })
 
+  const [resetPassword, setResetPassword] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  })
+
   useEffect(() => {
     fetchEmployees()
   }, [profile?.branch_id])
 
   const fetchEmployees = async () => {
     try {
+      // Use secure function that includes audit logging and data masking
       const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .rpc('get_employee_data_secure', {
+          p_employee_id: null, // Get all employees user has access to
+          p_include_sensitive: profile?.role === 'hr' || profile?.role === 'admin'
+        });
+
+      if (error) throw error;
       
-      if (error) throw error
-      setEmployees(data || [])
+      // Transform data to match expected Employee interface
+      const transformedData = (data || []).map((emp: any) => ({
+        id: emp.id,
+        employee_id: emp.employee_id,
+        full_name: emp.full_name,
+        email: emp.email,
+        phone: emp.phone || '',
+        department: emp.department || '',
+        designation: emp.designation || '',
+        joining_date: emp.joining_date,
+        date_of_birth: emp.date_of_birth,
+        basic_salary: emp.basic_salary || 0,
+        status: emp.status,
+        created_at: emp.created_at,
+      }));
+
+      setEmployees(transformedData);
     } catch (error) {
+      console.error('Error fetching employees:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch employees',
@@ -202,6 +230,112 @@ export default function HRDashboard() {
         description: error.message || 'Failed to create user account',
         variant: 'destructive',
       })
+    }
+  }
+
+  const handleEditEmployee = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedEmployee) return
+
+    try {
+      const { data, error } = await supabase.functions.invoke('employee-management', {
+        body: {
+          action: 'update',
+          employeeId: selectedEmployee.id,
+          employeeData: selectedEmployee
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Employee updated successfully',
+      });
+
+      setEditEmployeeOpen(false);
+      setSelectedEmployee(null);
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error updating employee:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update employee',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedEmployee) return
+
+    if (resetPassword.newPassword !== resetPassword.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('employee-management', {
+        body: {
+          action: 'reset_password',
+          employeeId: selectedEmployee.id,
+          newPassword: resetPassword.newPassword
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Password reset successfully',
+      });
+
+      setResetPasswordOpen(false);
+      setSelectedEmployee(null);
+      setResetPassword({ newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reset password',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  const handleDeactivateEmployee = async (employeeId: string) => {
+    if (!confirm('Are you sure you want to deactivate this employee?')) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('employee-management', {
+        body: {
+          action: 'deactivate',
+          employeeId: employeeId
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Employee deactivated successfully',
+      });
+
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error deactivating employee:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to deactivate employee',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -551,23 +685,24 @@ export default function HRDashboard() {
               <TableRow>
                 <TableHead>Employee ID</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Designation</TableHead>
-                <TableHead>Salary</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Joining Date</TableHead>
+                <TableHead>Salary</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     No employees found
                   </TableCell>
                 </TableRow>
@@ -575,22 +710,48 @@ export default function HRDashboard() {
                 filteredEmployees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.employee_id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{employee.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{employee.email}</div>
-                      </div>
-                    </TableCell>
+                    <TableCell>{employee.full_name}</TableCell>
+                    <TableCell>{employee.email}</TableCell>
                     <TableCell>{employee.department}</TableCell>
                     <TableCell>{employee.designation}</TableCell>
-                    <TableCell>₹{employee.basic_salary.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(employee.status)}>
+                      <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
                         {employee.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>₹{employee.basic_salary?.toLocaleString()}</TableCell>
                     <TableCell>
-                      {new Date(employee.joining_date).toLocaleDateString()}
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setEditEmployeeOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setResetPasswordOpen(true);
+                          }}
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                        {employee.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeactivateEmployee(employee.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -598,6 +759,138 @@ export default function HRDashboard() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Edit Employee Dialog */}
+        <Dialog open={editEmployeeOpen} onOpenChange={setEditEmployeeOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Employee</DialogTitle>
+            </DialogHeader>
+            {selectedEmployee && (
+              <form onSubmit={handleEditEmployee} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_full_name">Full Name</Label>
+                    <Input
+                      id="edit_full_name"
+                      value={selectedEmployee.full_name}
+                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, full_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_email">Email</Label>
+                    <Input
+                      id="edit_email"
+                      type="email"
+                      value={selectedEmployee.email}
+                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_phone">Phone</Label>
+                    <Input
+                      id="edit_phone"
+                      value={selectedEmployee.phone || ''}
+                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_department">Department</Label>
+                    <Select value={selectedEmployee.department || ''} onValueChange={(value) => setSelectedEmployee({ ...selectedEmployee, department: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sales">Sales</SelectItem>
+                        <SelectItem value="Accounts">Accounts</SelectItem>
+                        <SelectItem value="HR">Human Resources</SelectItem>
+                        <SelectItem value="Procurement">Procurement</SelectItem>
+                        <SelectItem value="Dispatch">Dispatch</SelectItem>
+                        <SelectItem value="IT">Information Technology</SelectItem>
+                        <SelectItem value="Admin">Administration</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_designation">Designation</Label>
+                    <Input
+                      id="edit_designation"
+                      value={selectedEmployee.designation || ''}
+                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, designation: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_basic_salary">Basic Salary (₹)</Label>
+                    <Input
+                      id="edit_basic_salary"
+                      type="number"
+                      value={selectedEmployee.basic_salary || 0}
+                      onChange={(e) => setSelectedEmployee({ ...selectedEmployee, basic_salary: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setEditEmployeeOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Update Employee</Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+            </DialogHeader>
+            {selectedEmployee && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Reset password for: <strong>{selectedEmployee.full_name}</strong>
+                </p>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new_password">New Password</Label>
+                    <Input
+                      id="new_password"
+                      type="password"
+                      value={resetPassword.newPassword}
+                      onChange={(e) => setResetPassword({ ...resetPassword, newPassword: e.target.value })}
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm_password">Confirm Password</Label>
+                    <Input
+                      id="confirm_password"
+                      type="password"
+                      value={resetPassword.confirmPassword}
+                      onChange={(e) => setResetPassword({ ...resetPassword, confirmPassword: e.target.value })}
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Reset Password</Button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )
