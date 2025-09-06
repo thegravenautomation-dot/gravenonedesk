@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck } from 'lucide-react'
+import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -529,6 +529,18 @@ export default function HRDashboard() {
                 </form>
               </DialogContent>
             </Dialog>
+
+            {/* Security Audit Dashboard Access - Only for HR/Admin */}
+            {(profile?.role === 'hr' || profile?.role === 'admin') && (
+              <Button 
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-50"
+                onClick={() => window.open('/security', '_blank')}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Security Audit
+              </Button>
+            )}
           </div>
         </div>
 

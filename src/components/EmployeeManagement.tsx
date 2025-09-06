@@ -73,20 +73,35 @@ export function EmployeeManagement() {
 
   const fetchEmployees = async () => {
     try {
-      let query = supabase
-        .from('employees')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // If user is not admin, only show employees from their branch
-      if (profile?.role !== 'admin') {
-        query = query.eq('branch_id', profile?.branch_id);
-      }
-
-      const { data, error } = await query;
+      // Use secure function that includes audit logging and data masking
+      const { data, error } = await supabase
+        .rpc('get_employee_data_secure', {
+          p_employee_id: null, // Get all employees user has access to
+          p_include_sensitive: profile?.role === 'hr' || profile?.role === 'admin'
+        });
 
       if (error) throw error;
-      setEmployees(data || []);
+      
+      // Transform data to match expected Employee interface
+      const transformedData = (data || []).map((emp: any) => ({
+        id: emp.id,
+        employee_id: emp.employee_id,
+        full_name: emp.full_name,
+        email: emp.email,
+        phone: emp.phone || '',
+        department: emp.department || '',
+        designation: emp.designation || '',
+        joining_date: emp.joining_date,
+        basic_salary: emp.basic_salary || 0,
+        status: emp.status,
+        branch_id: emp.branch_id,
+        // Include masked sensitive data for display
+        pan: emp.pan,
+        aadhaar: emp.aadhaar,
+        bank_account: emp.bank_account
+      }));
+
+      setEmployees(transformedData);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast({

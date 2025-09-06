@@ -13,7 +13,8 @@ import {
   UserCheck,
   Settings,
   BarChart3,
-  Plus
+  Plus,
+  Shield
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -271,6 +272,36 @@ export default function AdminDashboard() {
                 <Button size="sm" onClick={(e) => { e.stopPropagation(); navigate('/analytics'); }}>
                   <Plus className="h-4 w-4 mr-1" />
                   Open
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security Audit Dashboard - New Addition */}
+          <Card className="hover:shadow-lg transition-shadow border-red-200 bg-red-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-red-600" />
+                Security Audit
+              </CardTitle>
+              <CardDescription>
+                Monitor data access, audit logs, and security recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <Badge variant="destructive">Security Critical</Badge>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    // You can create a dedicated security page later or show SecurityAuditDashboard in a modal
+                    alert('Security Audit Dashboard - Navigate to dedicated security page coming soon!');
+                  }}
+                >
+                  <Shield className="h-4 w-4 mr-1" />
+                  Monitor
                 </Button>
               </div>
             </CardContent>
