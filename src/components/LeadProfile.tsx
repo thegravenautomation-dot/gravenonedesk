@@ -33,6 +33,7 @@ import {
   Package,
   DollarSign
 } from "lucide-react";
+import { CustomerProfile } from "./CustomerProfile";
 
 interface LeadProfileProps {
   leadId: string;
@@ -423,83 +424,13 @@ export function LeadProfile({ leadId, onClose }: LeadProfileProps) {
             </Card>
 
             {/* Customer Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Customer Information
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditingCustomer(true)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {customerData ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Name</Label>
-                        <p className="font-medium">{customerData.name}</p>
-                      </div>
-                      <div>
-                        <Label>Company</Label>
-                        <p className="text-sm">{customerData.company || "N/A"}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Email</Label>
-                        <p className="text-sm flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          {customerData.email || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <Label>Phone</Label>
-                        <p className="text-sm flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          {customerData.phone || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>WhatsApp</Label>
-                        <p className="text-sm flex items-center gap-2">
-                          <MessageCircle className="h-4 w-4" />
-                          {customerData.whatsapp_number || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <Label>Designation</Label>
-                        <p className="text-sm">{customerData.designation || "N/A"}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>GST Number</Label>
-                      <p className="text-sm">{customerData.gstin || "N/A"}</p>
-                    </div>
-                    <div>
-                      <Label>Billing Address</Label>
-                      <p className="text-sm">{customerData.billing_address || customerData.address || "N/A"}</p>
-                    </div>
-                    <div>
-                      <Label>Shipping Address</Label>
-                      <p className="text-sm">{customerData.shipping_address || customerData.address || "N/A"}</p>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">No customer information available</p>
-                )}
-              </CardContent>
-            </Card>
+            {customerData && (
+              <CustomerProfile 
+                customerId={customerData.id}
+                customerData={customerData}
+                onCustomerUpdate={fetchLeadData}
+              />
+            )}
           </div>
 
           <div className="flex gap-4">

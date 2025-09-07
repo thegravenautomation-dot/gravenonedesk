@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Calendar, Clock, CheckCircle, User, Building2 } from "lucide-react";
+import { CustomerProfile } from "./CustomerProfile";
 
 export function DashboardFollowUps() {
   const { profile } = useAuth();
@@ -154,21 +155,12 @@ export function DashboardFollowUps() {
                             {followUp.priority}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Building2 className="h-3 w-3" />
-                            <span>{followUp.customers?.name}</span>
-                            {followUp.customers?.company && (
-                              <span>({followUp.customers.company})</span>
-                            )}
-                          </div>
-                          {followUp.customers?.phone && (
-                            <div className="flex items-center space-x-1 mt-1">
-                              <Phone className="h-3 w-3" />
-                              <span>{followUp.customers.phone}</span>
-                            </div>
-                          )}
-                        </div>
+                        <CustomerProfile 
+                          customerId={followUp.customer_id}
+                          customerData={followUp.customers}
+                          compact={true}
+                          onCustomerUpdate={fetchTodaysFollowUps}
+                        />
                         {followUp.follow_up_time && (
                           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
@@ -270,17 +262,18 @@ export function DashboardFollowUps() {
                             {followUp.priority}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Building2 className="h-3 w-3" />
-                            <span>{followUp.customers?.name}</span>
-                            {followUp.customers?.company && (
-                              <span>({followUp.customers.company})</span>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-1 mt-1">
-                            <User className="h-3 w-3" />
-                            <span>Assigned to: {followUp.profiles?.full_name}</span>
+                        <div className="space-y-2">
+                          <CustomerProfile 
+                            customerId={followUp.customer_id}
+                            customerData={followUp.customers}
+                            compact={true}
+                            showScheduleButton={false}
+                          />
+                          <div className="text-sm text-muted-foreground">
+                            <div className="flex items-center space-x-1">
+                              <User className="h-3 w-3" />
+                              <span>Assigned to: {followUp.profiles?.full_name}</span>
+                            </div>
                           </div>
                         </div>
                         {followUp.follow_up_time && (
