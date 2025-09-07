@@ -28,7 +28,6 @@ export function DashboardFollowUps() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // If user is admin, show all follow-ups across branches
       const query = supabase
         .from('follow_ups')
         .select(`
@@ -41,9 +40,15 @@ export function DashboardFollowUps() {
         .eq('status', 'scheduled')
         .order('follow_up_time', { ascending: true });
 
-      // Admin sees all branches, others see only their branch
-      if (profile?.role !== 'admin') {
+      // Role-based access control
+      if (profile?.role === 'admin') {
+        // Admin sees all follow-ups across branches
+      } else if (['sales_manager', 'manager'].includes(profile?.role) && profile?.department === 'Sales') {
+        // Sales managers see all follow-ups in their branch
         query.eq('branch_id', profile?.branch_id);
+      } else {
+        // BDO, FBDO and other roles see only their assigned follow-ups
+        query.eq('assigned_to', profile?.id);
       }
 
       const { data, error } = await query;

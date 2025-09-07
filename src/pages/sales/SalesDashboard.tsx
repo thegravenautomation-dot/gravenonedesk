@@ -2,6 +2,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { LeadManagement } from '@/components/LeadManagement';
 import { FollowUpManager } from '@/components/FollowUpManager';
 import { DashboardFollowUps } from '@/components/DashboardFollowUps';
+import { PersonalAnalytics } from '@/components/analytics/PersonalAnalytics';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +70,7 @@ export default function SalesDashboard() {
           <TabsTrigger value="leads">Lead Management</TabsTrigger>
           <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="dashboard">Today's Follow-ups</TabsTrigger>
+          <TabsTrigger value="analytics">My Analytics</TabsTrigger>
           {canManageTeam && (
             <TabsTrigger value="team">Team Overview</TabsTrigger>
           )}
@@ -84,6 +86,10 @@ export default function SalesDashboard() {
         
         <TabsContent value="dashboard" className="space-y-4">
           <DashboardFollowUps />
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-4">
+          <PersonalAnalytics />
         </TabsContent>
 
         {canManageTeam && (

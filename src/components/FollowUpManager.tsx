@@ -82,9 +82,20 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
           leads (title, lead_no),
           profiles!follow_ups_assigned_to_fkey (full_name)
         `)
-        .eq('branch_id', profile?.branch_id)
         .order('follow_up_date', { ascending: false });
 
+      // Role-based access control
+      if (profile?.role === 'admin') {
+        // Admin sees all follow-ups across branches
+      } else if (['sales_manager', 'manager'].includes(profile?.role) && profile?.department === 'Sales') {
+        // Sales managers see all follow-ups in their branch
+        query = query.eq('branch_id', profile?.branch_id);
+      } else {
+        // BDO, FBDO and other roles see only their assigned follow-ups
+        query = query.eq('assigned_to', profile?.id);
+      }
+
+      // Apply filters based on props
       if (customerId) {
         query = query.eq('customer_id', customerId);
       }
