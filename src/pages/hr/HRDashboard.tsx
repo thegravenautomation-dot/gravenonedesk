@@ -69,6 +69,19 @@ export default function HRDashboard() {
     employee_id: '',
   })
 
+  const roleOptions = [
+    { value: 'executive', label: 'Executive' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'sales_manager', label: 'Sales Manager' },
+    { value: 'bdo', label: 'BDO (Business Development Officer)' },
+    { value: 'fbdo', label: 'FBDO (Field Business Development Officer)' },
+    { value: 'accountant', label: 'Accountant' },
+    { value: 'hr', label: 'HR' },
+    { value: 'procurement', label: 'Procurement' },
+    { value: 'dispatch', label: 'Dispatch' },
+    ...(profile?.role === 'admin' ? [{ value: 'admin', label: 'Admin' }] : [])
+  ]
+
   const [resetPassword, setResetPassword] = useState({
     newPassword: '',
     confirmPassword: '',
@@ -668,13 +681,11 @@ export default function HRDashboard() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="executive">Executive</SelectItem>
-                        <SelectItem value="accountant">Accountant</SelectItem>
-                        <SelectItem value="hr">HR</SelectItem>
-                        <SelectItem value="procurement">Procurement</SelectItem>
-                        <SelectItem value="dispatch">Dispatch</SelectItem>
+                        {roleOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

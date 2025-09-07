@@ -1573,6 +1573,14 @@ export type Database = {
         Args: { _employee_branch_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_sales_data: {
+        Args: { _target_branch_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_sales_team: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       get_employee_data_secure: {
         Args: { p_employee_id?: string; p_include_sensitive?: boolean }
         Returns: {
