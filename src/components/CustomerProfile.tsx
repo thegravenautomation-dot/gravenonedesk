@@ -14,6 +14,7 @@ interface CustomerProfileProps {
   customerId: string;
   customerData?: any;
   onCustomerUpdate?: () => void;
+  onFollowUpScheduled?: () => void;
   compact?: boolean;
   showScheduleButton?: boolean;
 }
@@ -22,6 +23,7 @@ export function CustomerProfile({
   customerId, 
   customerData: initialCustomerData, 
   onCustomerUpdate,
+  onFollowUpScheduled,
   compact = false,
   showScheduleButton = true 
 }: CustomerProfileProps) {
@@ -399,6 +401,7 @@ export function CustomerProfile({
               <FollowUpScheduler
                 customerId={customerId}
                 customerName={customerData.name}
+                onFollowUpScheduled={onFollowUpScheduled}
                 trigger={
                   <Button variant="outline" size="sm">
                     <Calendar className="h-4 w-4 mr-2" />

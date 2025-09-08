@@ -69,6 +69,26 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
       fetchCustomers();
       fetchLeads();
       fetchUsers();
+      
+      // Set up real-time subscription for follow-ups
+      const channel = supabase
+        .channel('follow-ups-manager-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'follow_ups'
+          },
+          () => {
+            fetchFollowUps();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [profile?.branch_id]);
 
