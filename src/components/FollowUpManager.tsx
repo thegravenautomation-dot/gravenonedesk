@@ -209,11 +209,18 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
       setLoading(true);
 
       const followUpPayload = {
-        ...followUpData,
+        customer_id: followUpData.customer_id,
         lead_id: followUpData.lead_id || null,
+        follow_up_date: followUpData.follow_up_date,
         follow_up_time: followUpData.follow_up_time ? followUpData.follow_up_time : null,
-        next_follow_up_date: followUpData.next_follow_up_date ? followUpData.next_follow_up_date : null,
+        type: followUpData.type,
+        priority: followUpData.priority,
+        status: followUpData.status,
+        title: followUpData.title,
+        description: followUpData.description || null,
         notes: followUpData.notes ?? null,
+        assigned_to: followUpData.assigned_to,
+        next_follow_up_date: followUpData.next_follow_up_date ? followUpData.next_follow_up_date : null,
         branch_id: profile?.branch_id,
         created_by: profile?.id
       };
@@ -310,8 +317,18 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
   const handleEdit = (followUp: any) => {
     setEditingFollowUp(followUp);
     setFollowUpData({
-      ...followUp,
+      id: followUp.id,
+      customer_id: followUp.customer_id,
+      lead_id: followUp.lead_id || undefined,
       follow_up_date: followUp.follow_up_date ? new Date(followUp.follow_up_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      follow_up_time: followUp.follow_up_time ?? "",
+      type: followUp.type || "call",
+      priority: followUp.priority || "medium",
+      status: followUp.status || "scheduled",
+      title: followUp.title || "",
+      description: followUp.description || "",
+      notes: followUp.notes || "",
+      assigned_to: followUp.assigned_to,
       next_follow_up_date: followUp.next_follow_up_date ? new Date(followUp.next_follow_up_date).toISOString().split('T')[0] : ""
     });
     setIsDialogOpen(true);
