@@ -528,9 +528,9 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                       rows={4}
                     />
                   </div>
-                </>
+                 </>
                )}
-             </div>
+              </div>
             </div>
             
             <div className="flex justify-end space-x-2 mt-6 pt-4 border-t sticky bottom-0 bg-background">
