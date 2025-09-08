@@ -94,6 +94,8 @@ export function FollowUpScheduler({
 
       const followUpPayload = {
         ...followUpData,
+        lead_id: followUpData.lead_id || null,
+        follow_up_time: followUpData.follow_up_time ? followUpData.follow_up_time : null,
         branch_id: profile?.branch_id,
         created_by: profile?.id
       };

@@ -50,7 +50,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
 
   const [followUpData, setFollowUpData] = useState<FollowUpData>({
     customer_id: customerId || "",
-    lead_id: leadId || "",
+    lead_id: leadId || undefined,
     follow_up_date: new Date().toISOString().split('T')[0],
     follow_up_time: "",
     type: "call",
@@ -91,6 +91,14 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
       };
     }
   }, [profile?.branch_id]);
+
+  // When customer changes, reset selected lead and refetch leads filtered by customer
+  useEffect(() => {
+    if (isDialogOpen) {
+      setFollowUpData((prev) => ({ ...prev, lead_id: undefined }));
+      fetchLeads();
+    }
+  }, [followUpData.customer_id, isDialogOpen]);
 
   const fetchFollowUps = async () => {
     try {
@@ -152,11 +160,17 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
 
   const fetchLeads = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('leads')
-        .select('id, title, lead_no')
+        .select('id, title, lead_no, customer_id')
         .eq('branch_id', profile?.branch_id)
         .order('created_at', { ascending: false });
+
+      if (followUpData.customer_id) {
+        query = query.eq('customer_id', followUpData.customer_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setLeads(data || []);
@@ -196,6 +210,10 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
 
       const followUpPayload = {
         ...followUpData,
+        lead_id: followUpData.lead_id || null,
+        follow_up_time: followUpData.follow_up_time ? followUpData.follow_up_time : null,
+        next_follow_up_date: followUpData.next_follow_up_date ? followUpData.next_follow_up_date : null,
+        notes: followUpData.notes ?? null,
         branch_id: profile?.branch_id,
         created_by: profile?.id
       };
@@ -275,7 +293,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
   const resetForm = () => {
     setFollowUpData({
       customer_id: customerId || "",
-      lead_id: leadId || "",
+      lead_id: leadId || undefined,
       follow_up_date: new Date().toISOString().split('T')[0],
       follow_up_time: "",
       type: "call",
@@ -373,7 +391,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
               <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customer_id">Customer *</Label>
-                <Select value={followUpData.customer_id} onValueChange={(value) => setFollowUpData({...followUpData, customer_id: value})}>
+                <Select value={followUpData.customer_id} onValueChange={(value) => setFollowUpData((prev) => ({...prev, customer_id: value, lead_id: undefined}))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
@@ -389,7 +407,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
 
               <div>
                 <Label htmlFor="lead_id">Related Lead</Label>
-                <Select value={followUpData.lead_id || "none"} onValueChange={(value) => setFollowUpData({...followUpData, lead_id: value === "none" ? undefined : value})}>
+                <Select value={followUpData.lead_id || "none"} onValueChange={(value) => setFollowUpData((prev) => ({...prev, lead_id: value === "none" ? undefined : value}))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select lead (optional)" />
                   </SelectTrigger>
@@ -435,7 +453,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                   id="follow_up_date"
                   type="date"
                   value={followUpData.follow_up_date}
-                  onChange={(e) => setFollowUpData({...followUpData, follow_up_date: e.target.value})}
+                  onChange={(e) => setFollowUpData((prev) => ({...prev, follow_up_date: e.target.value}))}
                 />
               </div>
 
