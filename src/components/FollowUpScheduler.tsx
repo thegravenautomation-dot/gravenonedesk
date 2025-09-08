@@ -150,103 +150,105 @@ export function FollowUpScheduler({
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="sticky top-0 bg-background pb-4 border-b z-10">
           <DialogTitle>Schedule Follow-up</DialogTitle>
           <DialogDescription>
             Schedule a follow-up for {customerName}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={followUpData.title}
-              onChange={(e) => setFollowUpData({...followUpData, title: e.target.value})}
-              placeholder="Enter follow-up title"
-            />
-          </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={followUpData.title}
+                onChange={(e) => setFollowUpData({...followUpData, title: e.target.value})}
+                placeholder="Enter follow-up title"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="type">Type</Label>
-            <Select value={followUpData.type} onValueChange={(value) => setFollowUpData({...followUpData, type: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="call">Call</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="meeting">Meeting</SelectItem>
-                <SelectItem value="visit">Visit</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <Label htmlFor="type">Type</Label>
+              <Select value={followUpData.type} onValueChange={(value) => setFollowUpData({...followUpData, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  <SelectItem value="call">Call</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="visit">Visit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <Label htmlFor="follow_up_date">Date *</Label>
-            <Input
-              id="follow_up_date"
-              type="date"
-              value={followUpData.follow_up_date}
-              onChange={(e) => setFollowUpData({...followUpData, follow_up_date: e.target.value})}
-            />
-          </div>
+            <div>
+              <Label htmlFor="follow_up_date">Date *</Label>
+              <Input
+                id="follow_up_date"
+                type="date"
+                value={followUpData.follow_up_date}
+                onChange={(e) => setFollowUpData({...followUpData, follow_up_date: e.target.value})}
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="follow_up_time">Time</Label>
-            <Input
-              id="follow_up_time"
-              type="time"
-              value={followUpData.follow_up_time}
-              onChange={(e) => setFollowUpData({...followUpData, follow_up_time: e.target.value})}
-            />
-          </div>
+            <div>
+              <Label htmlFor="follow_up_time">Time</Label>
+              <Input
+                id="follow_up_time"
+                type="time"
+                value={followUpData.follow_up_time}
+                onChange={(e) => setFollowUpData({...followUpData, follow_up_time: e.target.value})}
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="priority">Priority</Label>
-            <Select value={followUpData.priority} onValueChange={(value) => setFollowUpData({...followUpData, priority: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="urgent">Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <Label htmlFor="priority">Priority</Label>
+              <Select value={followUpData.priority} onValueChange={(value) => setFollowUpData({...followUpData, priority: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <Label htmlFor="assigned_to">Assigned To *</Label>
-            <Select value={followUpData.assigned_to} onValueChange={(value) => setFollowUpData({...followUpData, assigned_to: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select user" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name} ({user.role})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <Label htmlFor="assigned_to">Assigned To *</Label>
+              <Select value={followUpData.assigned_to} onValueChange={(value) => setFollowUpData({...followUpData, assigned_to: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name} ({user.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="col-span-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={followUpData.description}
-              onChange={(e) => setFollowUpData({...followUpData, description: e.target.value})}
-              placeholder="Enter follow-up description"
-              rows={3}
-            />
+            <div className="col-span-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={followUpData.description}
+                onChange={(e) => setFollowUpData({...followUpData, description: e.target.value})}
+                placeholder="Enter follow-up description"
+                rows={4}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2 mt-6">
+        <div className="flex justify-end space-x-2 mt-6 pt-4 border-t sticky bottom-0 bg-background">
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>

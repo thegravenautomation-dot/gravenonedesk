@@ -360,7 +360,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <DialogHeader>
+            <DialogHeader className="sticky top-0 bg-background pb-4 border-b z-10">
               <DialogTitle>
                 {editingFollowUp ? 'Edit Follow-up' : 'Schedule New Follow-up'}
               </DialogTitle>
@@ -369,14 +369,15 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customer_id">Customer *</Label>
                 <Select value={followUpData.customer_id} onValueChange={(value) => setFollowUpData({...followUpData, customer_id: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50">
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name} {customer.company && `(${customer.company})`}
@@ -392,7 +393,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                   <SelectTrigger>
                     <SelectValue placeholder="Select lead (optional)" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50">
                     <SelectItem value="none">No Lead</SelectItem>
                     {leads.map((lead) => (
                       <SelectItem key={lead.id} value={lead.id}>
@@ -419,7 +420,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50">
                     <SelectItem value="call">Call</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="meeting">Meeting</SelectItem>
@@ -454,7 +455,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50">
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
@@ -469,7 +470,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                   <SelectTrigger>
                     <SelectValue placeholder="Select user" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50">
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.full_name} ({user.role})
@@ -498,7 +499,7 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50">
                         <SelectItem value="scheduled">Scheduled</SelectItem>
                         <SelectItem value="completed">Completed</SelectItem>
                         <SelectItem value="postponed">Postponed</SelectItem>
@@ -528,10 +529,11 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
                     />
                   </div>
                 </>
-              )}
+               )}
+             </div>
             </div>
-
-            <div className="flex justify-end space-x-2 mt-6">
+            
+            <div className="flex justify-end space-x-2 mt-6 pt-4 border-t sticky bottom-0 bg-background">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
