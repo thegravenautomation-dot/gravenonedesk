@@ -368,12 +368,12 @@ export function FollowUpManager({ customerId, leadId, showTodaysOnly }: FollowUp
 
               <div>
                 <Label htmlFor="lead_id">Related Lead</Label>
-                <Select value={followUpData.lead_id || ""} onValueChange={(value) => setFollowUpData({...followUpData, lead_id: value || undefined})}>
+                <Select value={followUpData.lead_id || "none"} onValueChange={(value) => setFollowUpData({...followUpData, lead_id: value === "none" ? undefined : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select lead (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Lead</SelectItem>
+                    <SelectItem value="none">No Lead</SelectItem>
                     {leads.map((lead) => (
                       <SelectItem key={lead.id} value={lead.id}>
                         {lead.lead_no} - {lead.title}
