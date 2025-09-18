@@ -43,6 +43,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [savedOrderId, setSavedOrderId] = useState<string | null>(null);
   
   const [orderData, setOrderData] = useState({
     order_no: "",
@@ -308,6 +309,8 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
 
       if (itemsError) throw itemsError;
 
+      setSavedOrderId(order.id);
+      
       toast({
         title: "Success",
         description: "Order created successfully",
@@ -330,6 +333,15 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
 
   const recordPayment = async () => {
     try {
+      if (!savedOrderId) {
+        toast({
+          title: "Error",
+          description: "Please save the order first before recording payment",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!paymentData.amount || !paymentData.method) {
         toast({
           title: "Error",
@@ -339,19 +351,47 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
         return;
       }
 
+      setLoading(true);
+
       let receiptPath = null;
       if (receiptFile) {
         receiptPath = await uploadFile(receiptFile, 'receipts');
       }
 
-      // This would be called after order is saved
-      // For now, just show success message
+      // Save payment to database
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          order_id: savedOrderId,
+          customer_id: customerId,
+          branch_id: profile?.branch_id,
+          amount: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          method: paymentData.method,
+          payment_mode: paymentData.method,
+          reference: paymentData.reference || null,
+          transaction_id: paymentData.reference || null,
+          receipt_path: receiptPath,
+          note: paymentData.note || null,
+          created_by: profile?.id
+        });
+
+      if (paymentError) throw paymentError;
+
       toast({
         title: "Success",
         description: "Payment recorded successfully",
       });
 
       setIsPaymentDialogOpen(false);
+      setPaymentData({
+        amount: 0,
+        payment_date: new Date().toISOString().split('T')[0],
+        method: "",
+        reference: "",
+        note: ""
+      });
+      setReceiptFile(null);
     } catch (error) {
       console.error('Error recording payment:', error);
       toast({
@@ -359,6 +399,8 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
         description: "Failed to record payment",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -580,7 +622,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
 
           <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" disabled={!savedOrderId}>
                 <DollarSign className="h-4 w-4 mr-2" />
                 Record Payment
               </Button>
@@ -662,8 +704,8 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
                   <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={recordPayment}>
-                    Record Payment
+                  <Button onClick={recordPayment} disabled={loading}>
+                    {loading ? "Recording..." : "Record Payment"}
                   </Button>
                 </div>
               </div>
