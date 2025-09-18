@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, UserPlus, Edit, UserX, Search, Filter } from "lucide-react";
+import { Users, UserPlus, Edit, UserX, Search, Filter, Trash2 } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -257,6 +257,39 @@ export function EmployeeManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to deactivate employee",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this employee? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Employee deleted successfully",
+      });
+
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete employee",
         variant: "destructive",
       });
     } finally {
@@ -546,6 +579,14 @@ export function EmployeeManagement() {
                           <UserX className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                        onClick={() => handleDeleteEmployee(employee.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

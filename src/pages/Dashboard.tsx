@@ -51,7 +51,11 @@ export default function Dashboard() {
       return <AdminDashboard />;
     case 'manager':
       return <AdminDashboard />; // Managers get admin view with some restrictions
+    case 'sales_manager':
+      return <SalesDashboard />; // Sales managers get sales dashboard
     case 'executive':
+    case 'bdo':
+    case 'fbdo':
       return <SalesDashboard />;
     case 'accountant':
       return <AccountsDashboard />;

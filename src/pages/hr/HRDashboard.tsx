@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield, Edit, Key, Trash2 } from 'lucide-react'
+import { Plus, Search, Users, UserPlus, Calendar, DollarSign, UserCheck, Shield, Edit, Key, Trash2, UserX } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -384,6 +384,35 @@ export default function HRDashboard() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to deactivate employee',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this employee? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Employee deleted successfully',
+      });
+
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete employee',
         variant: 'destructive',
       });
     }
@@ -796,9 +825,17 @@ export default function HRDashboard() {
                             size="sm"
                             onClick={() => handleDeactivateEmployee(employee.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <UserX className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:border-red-300"
+                          onClick={() => handleDeleteEmployee(employee.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
