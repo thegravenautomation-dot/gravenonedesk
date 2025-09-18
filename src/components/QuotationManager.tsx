@@ -93,27 +93,47 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .from('branches')
         .select('*')
         .eq('id', profile?.branch_id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching branch data:', error);
+        return;
+      }
+      
       setBranchData(data);
     } catch (error) {
       console.error('Error fetching branch data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch branch information",
+        variant: "destructive",
+      });
     }
   };
 
   const fetchCustomerData = async () => {
+    if (!customerId) return;
+    
     try {
       const { data, error } = await supabase
         .from('customers')
         .select('*')
         .eq('id', customerId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching customer data:', error);
+        return;
+      }
+      
       setCustomerData(data);
     } catch (error) {
       console.error('Error fetching customer data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch customer information",
+        variant: "destructive",
+      });
     }
   };
 
@@ -199,8 +219,17 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
     try {
       if (!quotationData.quotation_no || items.some(item => !item.item_name)) {
         toast({
+          title: "Validation Error",
+          description: "Please fill in the quotation number and all item names",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!profile?.branch_id) {
+        toast({
           title: "Error",
-          description: "Please fill all required fields",
+          description: "Branch information not found",
           variant: "destructive",
         });
         return;
@@ -214,29 +243,32 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .from('quotations')
         .insert({
           quotation_no: quotationData.quotation_no,
-          customer_id: customerId,
-          lead_id: leadId,
-          branch_id: profile?.branch_id,
+          customer_id: customerId || null,
+          lead_id: leadId || null,
+          branch_id: profile.branch_id,
           subtotal: subtotal,
           tax_amount: totalGst,
           total_amount: total,
           valid_till: quotationData.valid_till || null,
           terms: quotationData.terms || branchData?.terms_conditions,
           status: 'draft',
-          created_by: profile?.id,
+          created_by: profile.id,
         })
         .select()
         .single();
 
-      if (quotationError) throw quotationError;
+      if (quotationError) {
+        console.error('Quotation creation error:', quotationError);
+        throw quotationError;
+      }
 
       // Create quotation items
       const quotationItems = items.map(item => ({
         quotation_id: quotation.id,
         sr_no: item.sr_no,
         item_name: item.item_name,
-        description: item.description,
-        hsn_code: item.hsn_code,
+        description: item.description || '',
+        hsn_code: item.hsn_code || '',
         quantity: item.quantity,
         unit: item.unit,
         unit_price: item.unit_price,
@@ -249,11 +281,14 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .from('quotation_items')
         .insert(quotationItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Quotation items creation error:', itemsError);
+        throw itemsError;
+      }
 
       toast({
         title: "Success",
-        description: "Quotation created successfully",
+        description: `Quotation ${quotationData.quotation_no} created successfully`,
       });
 
       if (onSuccess) {
@@ -263,7 +298,7 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
       console.error('Error saving quotation:', error);
       toast({
         title: "Error",
-        description: "Failed to create quotation",
+        description: `Failed to create quotation: ${error.message}`,
         variant: "destructive",
       });
     } finally {

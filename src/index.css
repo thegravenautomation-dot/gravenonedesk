@@ -127,3 +127,81 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for PDF export */
+@media print {
+  /* Page setup */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+  
+  /* Ensure print background colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Hide non-print elements */
+  button, .no-print {
+    display: none !important;
+  }
+  
+  /* Quotation specific styles */
+  .quotation-template {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Table styles for print */
+  table {
+    border-collapse: collapse !important;
+    page-break-inside: avoid;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure gradients and colors print */
+  .bg-gradient-to-r {
+    background: #1e40af !important;
+    color: white !important;
+  }
+  
+  .bg-blue-600, .bg-blue-700 {
+    background: #1e40af !important;
+    color: white !important;
+  }
+  
+  .bg-blue-50 {
+    background: #eff6ff !important;
+  }
+  
+  .bg-green-50 {
+    background: #f0fdf4 !important;
+  }
+  
+  .bg-yellow-50 {
+    background: #fefce8 !important;
+  }
+  
+  .bg-red-50 {
+    background: #fef2f2 !important;
+  }
+  
+  .bg-gray-50 {
+    background: #f9fafb !important;
+  }
+  
+  .text-blue-600, .text-blue-700, .text-blue-800 {
+    color: #1e40af !important;
+  }
+  
+  .border-blue-200, .border-blue-300, .border-blue-500, .border-blue-600 {
+    border-color: #93c5fd !important;
+  }
+}
