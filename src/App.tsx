@@ -20,6 +20,7 @@ import DispatchDashboard from "@/pages/dispatch/DispatchDashboard";
 import EmployeePortal from "@/pages/employee/EmployeePortal";
 import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
 import SecurityDashboard from "@/pages/SecurityDashboard";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -93,6 +94,17 @@ function App() {
                     <ProtectedRoute>
                       <RoleRoute allowedRoles={['admin', 'manager']}>
                         <AdminDashboard />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+
+                <Route 
+                  path="/admin/settings" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin']}>
+                        <AdminSettings />
                       </RoleRoute>
                     </ProtectedRoute>
                   } 
