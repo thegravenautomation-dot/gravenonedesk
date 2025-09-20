@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,24 @@ interface AIAssistantProps {
   className?: string;
 }
 
+interface Customer {
+  id: string;
+  name: string;
+  company: string;
+  city: string;
+}
+
+interface Lead {
+  id: string;
+  title: string;
+  description: string;
+  customers: {
+    name: string;
+    company: string;
+    city: string;
+  } | null;
+}
+
 export function AIAssistant({ className }: AIAssistantProps) {
   const { toast } = useToast();
   const { user, profile } = useAuth();
@@ -29,6 +47,10 @@ export function AIAssistant({ className }: AIAssistantProps) {
   const [input, setInput] = useState("");
   const [context, setContext] = useState("general");
   const [loading, setLoading] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
+  const [selectedLead, setSelectedLead] = useState<string>("");
 
   const contexts = [
     { value: "general", label: "General", icon: MessageSquare },
@@ -38,6 +60,47 @@ export function AIAssistant({ className }: AIAssistantProps) {
     { value: "sales", label: "Sales Strategy", icon: TrendingUp },
     { value: "customers", label: "Customer Service", icon: Users },
   ];
+
+  // Fetch customers and leads when component mounts
+  useEffect(() => {
+    if (profile?.branch_id) {
+      fetchCustomers();
+      fetchLeads();
+    }
+  }, [profile?.branch_id]);
+
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, name, company, city')
+        .eq('branch_id', profile?.branch_id)
+        .order('name');
+      
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  const fetchLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id, title, description,
+          customers (name, company, city)
+        `)
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setLeads(data || []);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -61,6 +124,8 @@ export function AIAssistant({ className }: AIAssistantProps) {
           context,
           userId: user?.id,
           branchId: profile?.branch_id,
+          selectedCustomer: selectedCustomer || null,
+          selectedLead: selectedLead || null,
         }
       });
 
@@ -122,7 +187,11 @@ export function AIAssistant({ className }: AIAssistantProps) {
         {/* Context Selector */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Context</label>
-          <Select value={context} onValueChange={setContext}>
+          <Select value={context} onValueChange={(value) => {
+            setContext(value);
+            setSelectedCustomer("");
+            setSelectedLead("");
+          }}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -141,6 +210,46 @@ export function AIAssistant({ className }: AIAssistantProps) {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Customer Selector for Email Context */}
+        {context === 'email' && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Customer (Optional)</label>
+            <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a customer for personalized email..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No specific customer</SelectItem>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.name} - {customer.company} ({customer.city || 'Unknown Location'})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Lead Selector for Lead Management Context */}
+        {context === 'leads' && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Lead (Optional)</label>
+            <Select value={selectedLead} onValueChange={setSelectedLead}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a lead for targeted questions..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">General lead management</SelectItem>
+                {leads.map((lead) => (
+                  <SelectItem key={lead.id} value={lead.id}>
+                    {lead.title} - {lead.customers?.company || 'Unknown Company'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="h-64 border rounded-lg p-3 space-y-2">
