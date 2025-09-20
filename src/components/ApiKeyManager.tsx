@@ -171,7 +171,7 @@ export function ApiKeyManager() {
 
       toast({
         title: "Connection Test",
-        description: data?.success ? "Connection successful!" : "Connection failed",
+        description: data?.success ? data.message : `Connection failed: ${data?.error || 'Unknown error'}`,
         variant: data?.success ? "default" : "destructive",
       });
 
@@ -179,6 +179,45 @@ export function ApiKeyManager() {
       toast({
         title: "Test Failed",
         description: error.message || "Failed to test connection",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const manualSync = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current user's branch ID
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('branch_id')
+        .eq('id', userData.user?.id)
+        .single();
+
+      if (!profileData?.branch_id) {
+        throw new Error('Branch ID not found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('manual-indiamart-sync', {
+        body: { branchId: profileData.branch_id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "IndiaMART Sync",
+        description: data?.message || "Sync completed successfully",
+        variant: data?.success ? "default" : "destructive",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync IndiaMART data",
         variant: "destructive",
       });
     } finally {
@@ -281,7 +320,7 @@ export function ApiKeyManager() {
                           Save
                         </Button>
                         
-                        {apiKeys[keyDef.name] && apiKeys[keyDef.name] !== '••••••••••••' && (
+                        {apiKeys[keyDef.name] && (
                           <Button
                             variant="outline"
                             onClick={() => testConnection(keyDef.name)}
@@ -290,6 +329,17 @@ export function ApiKeyManager() {
                           >
                             <RefreshCw className="h-4 w-4 mr-1" />
                             Test
+                          </Button>
+                        )}
+                        
+                        {keyDef.name === 'INDIAMART_API_KEY' && apiKeys[keyDef.name] && (
+                          <Button
+                            variant="outline"
+                            onClick={() => manualSync()}
+                            disabled={loading}
+                            size="sm"
+                          >
+                            Sync Now
                           </Button>
                         )}
                       </div>

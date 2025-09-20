@@ -87,9 +87,21 @@ async function testIndiamartConnection(): Promise<boolean> {
     const apiKey = Deno.env.get('INDIAMART_API_KEY');
     if (!apiKey) return false;
 
-    // Test IndiaMART API endpoint
-    const response = await fetch(`https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=2024-01-01&end_time=2024-01-02`);
-    return response.ok;
+    // Test IndiaMART API endpoint with proper date format
+    const startTime = '2024-01-01 00:00:00';
+    const endTime = '2024-01-02 00:00:00';
+    const response = await fetch(`https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=${encodeURIComponent(startTime)}&end_time=${encodeURIComponent(endTime)}`);
+    
+    if (!response.ok) {
+      console.error('IndiaMART API error:', response.status, response.statusText);
+      return false;
+    }
+    
+    const data = await response.json();
+    console.log('IndiaMART test response:', data);
+    
+    // Consider it successful if we get a proper response (even if no leads)
+    return data.STATUS === 'SUCCESS' || data.CODE === 200;
   } catch (error) {
     console.error('IndiaMART test failed:', error);
     return false;
