@@ -68,12 +68,34 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (response.status === 429) {
-      throw new Error('IndiaMART API rate limit exceeded. Please try again later (usually after 5-10 minutes).');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          processed: 0,
+          new: 0,
+          message: 'IndiaMART API rate limit exceeded. Please wait 5-10 minutes before trying again. The system will automatically retry later.'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     if (!response.ok) {
       const errorMessage = responseData.MESSAGE || response.statusText || 'Unknown error';
-      throw new Error(`IndiaMART API error: ${response.status} - ${errorMessage}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          processed: 0,
+          new: 0,
+          message: `IndiaMART API error: ${response.status} - ${errorMessage}. Please check your API key and try again.`
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     let processed = 0;
