@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { DashboardCard } from '@/components/DashboardCard'
+import { AIAssistant } from '@/components/AIAssistant'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -24,7 +25,8 @@ import {
   Download,
   Plus,
   CheckCircle,
-  XCircle
+  XCircle,
+  Bot
 } from 'lucide-react'
 
 interface LeaveRequest {
@@ -224,12 +226,16 @@ export default function EmployeePortal() {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="leaves">Leaves</TabsTrigger>
             <TabsTrigger value="payslips">Payslips</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="ai-assistant">
+              <Bot className="h-4 w-4 mr-1" />
+              AI Assistant
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4">
@@ -550,6 +556,12 @@ export default function EmployeePortal() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="ai-assistant" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AIAssistant className="lg:col-span-2" />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -62,3 +62,9 @@ verify_jwt = true
 
 [functions.test-api-connection]
 verify_jwt = true
+
+[functions.manual-indiamart-sync]
+verify_jwt = true
+
+[functions.ai-assistant]
+verify_jwt = true

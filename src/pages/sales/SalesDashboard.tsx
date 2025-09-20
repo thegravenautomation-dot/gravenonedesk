@@ -3,11 +3,12 @@ import { LeadManagement } from '@/components/LeadManagement';
 import { FollowUpManager } from '@/components/FollowUpManager';
 import { DashboardFollowUps } from '@/components/DashboardFollowUps';
 import { PersonalAnalytics } from '@/components/analytics/PersonalAnalytics';
+import { AIAssistant } from '@/components/AIAssistant';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, Target, TrendingUp } from 'lucide-react';
+import { Users, Target, TrendingUp, Bot } from 'lucide-react';
 
 export default function SalesDashboard() {
   const { profile } = useAuth();
@@ -71,6 +72,10 @@ export default function SalesDashboard() {
           <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="dashboard">Today's Follow-ups</TabsTrigger>
           <TabsTrigger value="analytics">My Analytics</TabsTrigger>
+          <TabsTrigger value="ai-assistant">
+            <Bot className="h-4 w-4 mr-1" />
+            AI Assistant
+          </TabsTrigger>
           {canManageTeam && (
             <TabsTrigger value="team">Team Overview</TabsTrigger>
           )}
@@ -90,6 +95,12 @@ export default function SalesDashboard() {
         
         <TabsContent value="analytics" className="space-y-4">
           <PersonalAnalytics />
+        </TabsContent>
+
+        <TabsContent value="ai-assistant" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AIAssistant className="lg:col-span-2" />
+          </div>
         </TabsContent>
 
         {canManageTeam && (
