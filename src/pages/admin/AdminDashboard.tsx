@@ -278,31 +278,22 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Security Audit Dashboard - New Addition */}
-          <Card className="hover:shadow-lg transition-shadow border-red-200 bg-red-50/50">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/settings')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-red-600" />
-                Security Audit
+                <Settings className="h-5 w-5 text-gray-600" />
+                System Settings
               </CardTitle>
               <CardDescription>
-                Monitor data access, audit logs, and security recommendations
+                API keys, integrations, and system configuration
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <Badge variant="destructive">Security Critical</Badge>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-red-200 text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    // You can create a dedicated security page later or show SecurityAuditDashboard in a modal
-                    alert('Security Audit Dashboard - Navigate to dedicated security page coming soon!');
-                  }}
-                >
-                  <Shield className="h-4 w-4 mr-1" />
-                  Monitor
+                <Badge variant="secondary">Admin Only</Badge>
+                <Button size="sm" onClick={(e) => { e.stopPropagation(); navigate('/admin/settings'); }}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Configure
                 </Button>
               </div>
             </CardContent>

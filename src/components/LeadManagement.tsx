@@ -106,17 +106,25 @@ export function LeadManagement() {
     value: 0,
     probability: 50,
     expected_close_date: "",
-    source: "manual"
+    source: "manual",
+    region: "",
+    city: "",
+    state: "",
   });
 
   const [newRule, setNewRule] = useState({
     name: "",
+    description: "",
     assigned_to: "",
     priority: 1,
+    rule_type: "manual",
     conditions: {
       source: "any",
       value_min: 0,
-      value_max: 0
+      value_max: 0,
+      region: "",
+      city: "",
+      state: ""
     }
   });
 
@@ -551,18 +559,21 @@ export function LeadManagement() {
       });
 
       setIsManualLeadOpen(false);
-      setNewLead({
-        title: "",
-        description: "",
-        customer_name: "",
-        customer_email: "",
-        customer_phone: "",
-        customer_company: "",
-        value: 0,
-        probability: 50,
-        expected_close_date: "",
-        source: "manual"
-      });
+        setNewLead({
+          title: "",
+          description: "",
+          customer_name: "",
+          customer_email: "",
+          customer_phone: "",
+          customer_company: "",
+          value: 0,
+          probability: 50,
+          expected_close_date: "",
+          source: "manual",
+          region: "",
+          city: "",
+          state: "",
+        });
 
       fetchLeads();
     } catch (error: any) {
@@ -651,12 +662,17 @@ export function LeadManagement() {
 
       setNewRule({
         name: "",
+        description: "",
         assigned_to: "",
         priority: 1,
+        rule_type: "manual",
         conditions: {
           source: "any",
           value_min: 0,
-          value_max: 0
+          value_max: 0,
+          region: "",
+          city: "",
+          state: ""
         }
       });
 

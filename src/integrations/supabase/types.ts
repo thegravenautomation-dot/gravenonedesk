@@ -780,10 +780,12 @@ export type Database = {
           branch_id: string
           conditions: Json
           created_at: string
+          description: string | null
           id: string
           is_active: boolean
           name: string
           priority: number
+          rule_type: string | null
           updated_at: string
         }
         Insert: {
@@ -791,10 +793,12 @@ export type Database = {
           branch_id: string
           conditions?: Json
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name: string
           priority?: number
+          rule_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -802,10 +806,12 @@ export type Database = {
           branch_id?: string
           conditions?: Json
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
           name?: string
           priority?: number
+          rule_type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -847,6 +853,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           branch_id: string | null
+          city: string | null
           created_at: string | null
           customer_id: string | null
           description: string | null
@@ -857,7 +864,9 @@ export type Database = {
           lead_source_id: string | null
           probability: number | null
           raw_data: Json | null
+          region: string | null
           source: string | null
+          state: string | null
           status: Database["public"]["Enums"]["lead_status"] | null
           title: string
           updated_at: string | null
@@ -866,6 +875,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           branch_id?: string | null
+          city?: string | null
           created_at?: string | null
           customer_id?: string | null
           description?: string | null
@@ -876,7 +886,9 @@ export type Database = {
           lead_source_id?: string | null
           probability?: number | null
           raw_data?: Json | null
+          region?: string | null
           source?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           title: string
           updated_at?: string | null
@@ -885,6 +897,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           branch_id?: string | null
+          city?: string | null
           created_at?: string | null
           customer_id?: string | null
           description?: string | null
@@ -895,7 +908,9 @@ export type Database = {
           lead_source_id?: string | null
           probability?: number | null
           raw_data?: Json | null
+          region?: string | null
           source?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["lead_status"] | null
           title?: string
           updated_at?: string | null
@@ -1605,6 +1620,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_lead_smart: {
+        Args: { p_branch_id: string; p_lead_id: string }
+        Returns: string
+      }
       can_access_employee_data: {
         Args: { _employee_branch_id: string; _user_id: string }
         Returns: boolean
@@ -1644,6 +1663,10 @@ export type Database = {
           status: Database["public"]["Enums"]["employee_status"]
           updated_at: string
         }[]
+      }
+      get_previous_salesperson_for_customer: {
+        Args: { p_branch_id: string; p_customer_id: string }
+        Returns: string
       }
       get_security_recommendations: {
         Args: Record<PropertyKey, never>

@@ -1,10 +1,64 @@
 project_id = "xiqumuqtzejtiinezryu"
 
-[functions.send-email]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 9999
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://xiqumuqtzejtiinezryu.supabase.co"]
+jwt_expiry = 3600
+inactivity_timeout = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+template_name = "magic_link"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[functions.employee-management]
+verify_jwt = true
+
+[functions.indiamart-sync]
 verify_jwt = false
 
 [functions.initial-setup]
 verify_jwt = false
 
+[functions.send-communication-email]
+verify_jwt = true
+
+[functions.send-email]
+verify_jwt = true
+
+[functions.send-whatsapp]
+verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
 [functions.lead-capture]
 verify_jwt = false
+
+[functions.tradeindia-sync]
+verify_jwt = false
+
+[functions.check-api-keys]
+verify_jwt = true
+
+[functions.update-api-key]
+verify_jwt = true
+
+[functions.test-api-connection]
+verify_jwt = true
