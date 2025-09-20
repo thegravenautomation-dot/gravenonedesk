@@ -69,6 +69,13 @@ export function ApiKeyManager() {
   ];
 
   useEffect(() => {
+    // Initialize showKeys for all key definitions
+    const initialShowKeys: {[key: string]: boolean} = {};
+    keyDefinitions.forEach(keyDef => {
+      initialShowKeys[keyDef.name] = false;
+    });
+    setShowKeys(initialShowKeys);
+    
     fetchApiKeyStatus();
   }, []);
 
