@@ -67,8 +67,13 @@ const handler = async (req: Request): Promise<Response> => {
       totalRecords: responseData.TOTAL_RECORDS
     });
 
+    if (response.status === 429) {
+      throw new Error('IndiaMART API rate limit exceeded. Please try again later (usually after 5-10 minutes).');
+    }
+
     if (!response.ok) {
-      throw new Error(`IndiaMART API error: ${response.status} - ${responseData.MESSAGE}`);
+      const errorMessage = responseData.MESSAGE || response.statusText || 'Unknown error';
+      throw new Error(`IndiaMART API error: ${response.status} - ${errorMessage}`);
     }
 
     let processed = 0;

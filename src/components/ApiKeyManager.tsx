@@ -169,9 +169,23 @@ export function ApiKeyManager() {
 
       if (error) throw error;
 
+      let displayMessage = data?.success ? data.message : `Connection failed: ${data?.error || 'Unknown error'}`;
+      
+      // Provide user-friendly messages for common errors
+      if (!data?.success && keyName === 'INDIAMART_API_KEY') {
+        const errorMsg = data?.error || data?.message || '';
+        if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate limit') || errorMsg.toLowerCase().includes('too many requests')) {
+          displayMessage = 'IndiaMART API rate limit reached. Please wait 5-10 minutes before testing again.';
+        } else if (errorMsg.toLowerCase().includes('connection failed')) {
+          displayMessage = 'Unable to connect to IndiaMART. Please check your API key and try again.';
+        } else if (errorMsg.toLowerCase().includes('unauthorized') || errorMsg.includes('401')) {
+          displayMessage = 'Invalid IndiaMART API key. Please check your credentials.';
+        }
+      }
+
       toast({
         title: "Connection Test",
-        description: data?.success ? data.message : `Connection failed: ${data?.error || 'Unknown error'}`,
+        description: displayMessage,
         variant: data?.success ? "default" : "destructive",
       });
 
@@ -215,9 +229,20 @@ export function ApiKeyManager() {
       });
 
     } catch (error: any) {
+      let errorMessage = error.message || "Failed to sync IndiaMART data";
+      
+      // Provide user-friendly messages for common IndiaMART errors
+      if (errorMessage.toLowerCase().includes('rate limit') || errorMessage.includes('429')) {
+        errorMessage = 'IndiaMART API rate limit exceeded. The system will automatically retry later. You can try manual sync again in 5-10 minutes.';
+      } else if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.includes('401')) {
+        errorMessage = 'IndiaMART API key is invalid. Please check your API key in settings.';
+      } else if (errorMessage.toLowerCase().includes('connection')) {
+        errorMessage = 'Unable to connect to IndiaMART. Please check your internet connection and try again.';
+      }
+      
       toast({
         title: "Sync Failed",
-        description: error.message || "Failed to sync IndiaMART data",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
