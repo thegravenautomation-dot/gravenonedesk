@@ -22,14 +22,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Key name is required');
     }
 
-    let testResult = false;
     let message = '';
 
     // Test different API connections based on key type
+    let testResult: any;
+    
     switch (keyName) {
       case 'INDIAMART_API_KEY':
         testResult = await testIndiamartConnection();
-        message = testResult ? 'IndiaMART connection successful' : 'IndiaMART connection failed';
         break;
         
       case 'TRADEINDIA_API_KEY':
@@ -54,6 +54,17 @@ const handler = async (req: Request): Promise<Response> => {
         
       default:
         throw new Error('Unsupported API key type');
+    }
+
+    // Handle IndiaMART's detailed response
+    if (keyName === 'INDIAMART_API_KEY') {
+      return new Response(
+        JSON.stringify(testResult),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     return new Response(
@@ -82,46 +93,101 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-async function testIndiamartConnection(): Promise<boolean> {
+async function testIndiamartConnection(): Promise<any> {
   try {
     const apiKey = Deno.env.get('INDIAMART_API_KEY');
     if (!apiKey) {
       console.error('IndiaMART API key not found');
-      return false;
+      return { success: false, message: 'IndiaMART API key not configured' };
     }
 
-    // Use a minimal time range to reduce API load for testing
+    // Use a minimal time range to avoid rate limits during testing
     const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const startTime = yesterday.toISOString().replace('T', ' ').substring(0, 19);
-    const endTime = now.toISOString().replace('T', ' ').substring(0, 19);
+    const startTime = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+    const endTime = now;
     
-    console.log('Testing IndiaMART connection...');
+    const formatDate = (date: Date) => {
+      return date.toISOString().slice(0, 19).replace('T', ' ');
+    };
     
-    const response = await fetch(`https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=${encodeURIComponent(startTime)}&end_time=${encodeURIComponent(endTime)}`);
+    const indiaMArtUrl = `https://mapi.indiamart.com/wservce/crm/crmListing/v2/?glusr_crm_key=${apiKey}&start_time=${encodeURIComponent(formatDate(startTime))}&end_time=${encodeURIComponent(formatDate(endTime))}`;
+    
+    console.log('Testing IndiaMART connection with API key:', apiKey.substring(0, 8) + '...');
+    console.log('URL (without key):', indiaMArtUrl.replace(apiKey, '[KEY_HIDDEN]'));
+    
+    const response = await fetch(indiaMArtUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; IndiaMART-CRM/1.0)',
+      },
+    });
     
     const data = await response.json();
+    
     console.log('IndiaMART test response:', {
       status: response.status,
+      statusText: response.statusText,
       code: data.CODE,
-      message: data.MESSAGE || response.statusText
+      message: data.MESSAGE,
+      status_field: data.STATUS,
+      total_records: data.TOTAL_RECORDS,
+      response_keys: Object.keys(data)
     });
     
     if (response.status === 429) {
-      console.error('IndiaMART API rate limited - too many requests');
-      return false;
+      return { 
+        success: false, 
+        message: 'IndiaMART API rate limit exceeded. Please wait 10-15 minutes before testing again. Consider reducing sync frequency.' 
+      };
+    }
+    
+    if (response.status === 401) {
+      return { 
+        success: false, 
+        message: 'IndiaMART API key is invalid or unauthorized. Please verify your API key is correct.' 
+      };
+    }
+    
+    if (response.status === 403) {
+      return { 
+        success: false, 
+        message: 'IndiaMART API access forbidden. Please check if your API key has proper permissions.' 
+      };
     }
     
     if (!response.ok) {
-      console.error('IndiaMART API error:', response.status, data.MESSAGE || response.statusText);
-      return false;
+      return { 
+        success: false, 
+        message: `IndiaMART API error: ${response.status} - ${data.MESSAGE || response.statusText}` 
+      };
     }
     
-    // Consider it successful if we get a proper response structure
-    return data.STATUS === 'SUCCESS' || data.CODE === 200 || response.ok;
-  } catch (error) {
+    // Check for successful response
+    if (data.STATUS === 'SUCCESS' || data.CODE === 200 || response.ok) {
+      return { 
+        success: true, 
+        message: `IndiaMART connection successful! Status: ${data.STATUS}, Code: ${data.CODE}, Records: ${data.TOTAL_RECORDS || 0}`,
+        data: {
+          status: data.STATUS,
+          code: data.CODE,
+          totalRecords: data.TOTAL_RECORDS,
+          message: data.MESSAGE
+        }
+      };
+    } else {
+      return { 
+        success: false, 
+        message: `IndiaMART API returned unexpected response: ${data.MESSAGE || 'Unknown error'}` 
+      };
+    }
+    
+  } catch (error: any) {
     console.error('IndiaMART test failed:', error);
-    return false;
+    return { 
+      success: false, 
+      message: `Connection failed: ${error.message}` 
+    };
   }
 }
 
