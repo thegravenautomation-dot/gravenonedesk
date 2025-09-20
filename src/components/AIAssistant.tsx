@@ -124,8 +124,8 @@ export function AIAssistant({ className }: AIAssistantProps) {
           context,
           userId: user?.id,
           branchId: profile?.branch_id,
-          selectedCustomer: selectedCustomer || null,
-          selectedLead: selectedLead || null,
+          selectedCustomer: selectedCustomer === 'none' ? null : selectedCustomer,
+          selectedLead: selectedLead === 'none' ? null : selectedLead,
         }
       });
 
@@ -220,7 +220,7 @@ export function AIAssistant({ className }: AIAssistantProps) {
                 <SelectValue placeholder="Choose a customer for personalized email..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific customer</SelectItem>
+                <SelectItem value="none">No specific customer</SelectItem>
                 {customers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id}>
                     {customer.name} - {customer.company} ({customer.city || 'Unknown Location'})
@@ -240,7 +240,7 @@ export function AIAssistant({ className }: AIAssistantProps) {
                 <SelectValue placeholder="Choose a lead for targeted questions..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">General lead management</SelectItem>
+                <SelectItem value="none">General lead management</SelectItem>
                 {leads.map((lead) => (
                   <SelectItem key={lead.id} value={lead.id}>
                     {lead.title} - {lead.customers?.company || 'Unknown Company'}
