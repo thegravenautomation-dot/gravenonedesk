@@ -61,6 +61,8 @@ export function OrdersIntegrationCard() {
     </Card>
   );
 }
+
+export default function AccountsDashboard() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
