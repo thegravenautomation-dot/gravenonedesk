@@ -23,7 +23,8 @@ import {
   Building2,
   Printer,
   IndianRupee,
-  Calculator
+  Calculator,
+  ArrowRightLeft
 } from "lucide-react";
 
 interface Invoice {
@@ -44,7 +45,22 @@ interface Invoice {
   };
 }
 
-export default function AccountsDashboard() {
+// Add orders integration component
+export function OrdersIntegrationCard() {
+  return (
+    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+          Orders Integration
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">Sync with Sales & Procurement</p>
+      </CardContent>
+    </Card>
+  );
+}
   const { profile } = useAuth();
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -439,8 +455,17 @@ export default function AccountsDashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+                Orders Integration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Sync with Sales & Procurement</p>
+            </CardContent>
+          </Card>
           <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
             <DialogTrigger asChild>
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">

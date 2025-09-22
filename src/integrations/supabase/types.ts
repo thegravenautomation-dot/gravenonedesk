@@ -1096,6 +1096,7 @@ export type Database = {
         Row: {
           branch_id: string | null
           created_at: string | null
+          currency: string | null
           customer_id: string | null
           customer_po_no: string | null
           delivery_date: string | null
@@ -1113,6 +1114,7 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_id?: string | null
           customer_po_no?: string | null
           delivery_date?: string | null
@@ -1130,6 +1132,7 @@ export type Database = {
         Update: {
           branch_id?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_id?: string | null
           customer_po_no?: string | null
           delivery_date?: string | null
@@ -1305,18 +1308,87 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          gst_amount: number | null
+          gst_rate: number | null
+          hsn_code: string | null
+          id: string
+          item_name: string
+          purchase_order_id: string | null
+          quantity: number | null
+          source_order_item_id: string | null
+          sr_no: number
+          total_amount: number
+          unit: string | null
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name: string
+          purchase_order_id?: string | null
+          quantity?: number | null
+          source_order_item_id?: string | null
+          sr_no: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          gst_amount?: number | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name?: string
+          purchase_order_id?: string | null
+          quantity?: number | null
+          source_order_item_id?: string | null
+          sr_no?: number
+          total_amount?: number
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           branch_id: string | null
           created_at: string | null
           created_by: string | null
+          currency: string | null
           delivery_date: string | null
+          exchange_rate: number | null
           id: string
+          order_source: string | null
           po_date: string | null
           po_no: string
+          source_order_ids: Json | null
           status: string | null
           subtotal: number | null
+          supplier_contact: string | null
+          supplier_email: string | null
           tax_amount: number | null
+          terms_conditions: string | null
           total_amount: number | null
           updated_at: string | null
           vendor_id: string | null
@@ -1325,13 +1397,20 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           delivery_date?: string | null
+          exchange_rate?: number | null
           id?: string
+          order_source?: string | null
           po_date?: string | null
           po_no: string
+          source_order_ids?: Json | null
           status?: string | null
           subtotal?: number | null
+          supplier_contact?: string | null
+          supplier_email?: string | null
           tax_amount?: number | null
+          terms_conditions?: string | null
           total_amount?: number | null
           updated_at?: string | null
           vendor_id?: string | null
@@ -1340,13 +1419,20 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           delivery_date?: string | null
+          exchange_rate?: number | null
           id?: string
+          order_source?: string | null
           po_date?: string | null
           po_no?: string
+          source_order_ids?: Json | null
           status?: string | null
           subtotal?: number | null
+          supplier_contact?: string | null
+          supplier_email?: string | null
           tax_amount?: number | null
+          terms_conditions?: string | null
           total_amount?: number | null
           updated_at?: string | null
           vendor_id?: string | null
@@ -1477,6 +1563,7 @@ export type Database = {
           branch_id: string | null
           created_at: string | null
           created_by: string | null
+          currency: string | null
           customer_id: string | null
           id: string
           lead_id: string | null
@@ -1493,6 +1580,7 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           customer_id?: string | null
           id?: string
           lead_id?: string | null
@@ -1509,6 +1597,7 @@ export type Database = {
           branch_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          currency?: string | null
           customer_id?: string | null
           id?: string
           lead_id?: string | null
