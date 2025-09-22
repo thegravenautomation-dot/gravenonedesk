@@ -198,25 +198,32 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
     // Recalculate amounts when quantity or unit_price changes
     if (field === 'quantity' || field === 'unit_price' || field === 'gst_rate') {
       const item = newItems[index];
-      // Ensure numeric values and handle precision
+      // Ensure numeric values
       const quantity = Number(item.quantity) || 0;
       const unitPrice = Number(item.unit_price) || 0;
       const gstRate = Number(item.gst_rate) || 0;
       
-      const subtotal = Math.round((quantity * unitPrice) * 100) / 100; // Round to 2 decimal places
-      const gstAmount = Math.round(((subtotal * gstRate) / 100) * 100) / 100; // Round to 2 decimal places
+      // Calculate amounts with proper precision
+      const subtotal = quantity * unitPrice;
+      const gstAmount = (subtotal * gstRate) / 100;
       
-      newItems[index].total_amount = subtotal;
-      newItems[index].gst_amount = gstAmount;
+      newItems[index].total_amount = Math.round(subtotal * 100) / 100;
+      newItems[index].gst_amount = Math.round(gstAmount * 100) / 100;
     }
     
     setItems(newItems);
   };
 
   const calculateTotals = () => {
-    const subtotal = Math.round(items.reduce((sum, item) => sum + (Number(item.total_amount) || 0), 0) * 100) / 100;
-    const totalGst = Math.round(items.reduce((sum, item) => sum + (Number(item.gst_amount) || 0), 0) * 100) / 100;
-    const total = Math.round((subtotal + totalGst) * 100) / 100;
+    const subtotal = items.reduce((sum, item) => sum + (Number(item.total_amount) || 0), 0);
+    const totalGst = items.reduce((sum, item) => sum + (Number(item.gst_amount) || 0), 0);
+    const total = subtotal + totalGst;
+    
+    return {
+      subtotal: Math.round(subtotal * 100) / 100,
+      totalGst: Math.round(totalGst * 100) / 100,
+      total: Math.round(total * 100) / 100
+    };
     
     return { subtotal, totalGst, total };
   };
