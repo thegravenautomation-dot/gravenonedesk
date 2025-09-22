@@ -457,6 +457,7 @@ export default function AccountsDashboard() {
           </Card>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
