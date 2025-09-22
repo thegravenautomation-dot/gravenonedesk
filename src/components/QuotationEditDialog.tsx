@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2 } from "lucide-react";
 import { logEdit } from "@/lib/auditLogger";
 
-interface InvoiceItem {
+interface QuotationItem {
   id?: string;
   sr_no: number;
   item_name: string;
@@ -31,38 +31,38 @@ interface InvoiceItem {
   gst_amount: number;
 }
 
-interface InvoiceEditDialogProps {
+interface QuotationEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoiceId: string | null;
+  quotationId: string | null;
   onSuccess: () => void;
 }
 
-export function InvoiceEditDialog({
+export function QuotationEditDialog({
   open,
   onOpenChange,
-  invoiceId,
+  quotationId,
   onSuccess
-}: InvoiceEditDialogProps) {
+}: QuotationEditDialogProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [originalData, setOriginalData] = useState<any>(null);
 
-  const [invoiceData, setInvoiceData] = useState({
-    invoice_no: "",
+  const [quotationData, setQuotationData] = useState({
+    quotation_no: "",
     customer_id: "",
-    invoice_date: "",
-    due_date: "",
-    invoice_type: "regular" as "regular" | "proforma",
-    payment_status: "pending" as "pending" | "partial" | "paid" | "overdue",
+    lead_id: "",
+    valid_till: "",
+    terms: "",
+    status: "draft" as "draft" | "sent" | "approved" | "rejected" | "converted",
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0,
   });
 
-  const [items, setItems] = useState<InvoiceItem[]>([
+  const [items, setItems] = useState<QuotationItem[]>([
     {
       sr_no: 1,
       item_name: "",
@@ -80,13 +80,14 @@ export function InvoiceEditDialog({
   useEffect(() => {
     if (open) {
       fetchCustomers();
-      if (invoiceId) {
-        fetchInvoiceData();
+      if (quotationId) {
+        fetchQuotationData();
       } else {
         resetForm();
+        generateQuotationNumber();
       }
     }
-  }, [open, invoiceId]);
+  }, [open, quotationId]);
 
   const fetchCustomers = async () => {
     try {
@@ -103,39 +104,62 @@ export function InvoiceEditDialog({
     }
   };
 
-  const fetchInvoiceData = async () => {
-    if (!invoiceId) return;
+  const generateQuotationNumber = async () => {
+    try {
+      const { data } = await supabase
+        .from('quotations')
+        .select('quotation_no')
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let nextNumber = 1;
+      if (data && data.length > 0) {
+        const lastNumber = data[0].quotation_no.match(/\d+$/);
+        if (lastNumber) {
+          nextNumber = parseInt(lastNumber[0]) + 1;
+        }
+      }
+
+      const quotationNo = `QUO-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
+      setQuotationData(prev => ({ ...prev, quotation_no: quotationNo }));
+    } catch (error) {
+      console.error('Error generating quotation number:', error);
+    }
+  };
+
+  const fetchQuotationData = async () => {
+    if (!quotationId) return;
 
     try {
       setLoading(true);
 
-      // Fetch invoice with items
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
+      const { data: quotation, error: quotationError } = await supabase
+        .from('quotations')
         .select(`
           *,
-          invoice_items (*)
+          quotation_items (*)
         `)
-        .eq('id', invoiceId)
+        .eq('id', quotationId)
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (quotationError) throw quotationError;
 
-      setOriginalData(invoice);
-      setInvoiceData({
-        invoice_no: invoice.invoice_no,
-        customer_id: invoice.customer_id,
-        invoice_date: invoice.invoice_date,
-        due_date: invoice.due_date || "",
-        invoice_type: invoice.invoice_type,
-        payment_status: invoice.payment_status as "pending" | "partial" | "paid" | "overdue",
-        subtotal: invoice.subtotal || 0,
-        tax_amount: invoice.tax_amount || 0,
-        total_amount: invoice.total_amount || 0,
+      setOriginalData(quotation);
+      setQuotationData({
+        quotation_no: quotation.quotation_no,
+        customer_id: quotation.customer_id || "",
+        lead_id: quotation.lead_id || "",
+        valid_till: quotation.valid_till || "",
+        terms: quotation.terms || "",
+        status: quotation.status as "draft" | "sent" | "approved" | "rejected" | "converted",
+        subtotal: quotation.subtotal || 0,
+        tax_amount: quotation.tax_amount || 0,
+        total_amount: quotation.total_amount || 0,
       });
 
-      if (invoice.invoice_items && invoice.invoice_items.length > 0) {
-        const invoiceItems = invoice.invoice_items.map((item: any) => ({
+      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
+        const quotationItems = quotation.quotation_items.map((item: any) => ({
           id: item.id,
           sr_no: item.sr_no,
           item_name: item.item_name,
@@ -148,13 +172,13 @@ export function InvoiceEditDialog({
           gst_rate: item.gst_rate,
           gst_amount: item.gst_amount,
         }));
-        setItems(invoiceItems);
+        setItems(quotationItems);
       }
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      console.error('Error fetching quotation:', error);
       toast({
         title: "Error",
-        description: "Failed to load invoice data",
+        description: "Failed to load quotation data",
         variant: "destructive",
       });
     } finally {
@@ -163,13 +187,13 @@ export function InvoiceEditDialog({
   };
 
   const resetForm = () => {
-    setInvoiceData({
-      invoice_no: "",
+    setQuotationData({
+      quotation_no: "",
       customer_id: "",
-      invoice_date: new Date().toISOString().split('T')[0],
-      due_date: "",
-      invoice_type: "regular",
-      payment_status: "pending",
+      lead_id: "",
+      valid_till: "",
+      terms: "",
+      status: "draft",
       subtotal: 0,
       tax_amount: 0,
       total_amount: 0,
@@ -190,7 +214,7 @@ export function InvoiceEditDialog({
   };
 
   const addItem = () => {
-    const newItem: InvoiceItem = {
+    const newItem: QuotationItem = {
       sr_no: items.length + 1,
       item_name: "",
       description: "",
@@ -217,7 +241,7 @@ export function InvoiceEditDialog({
     }
   };
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+  const updateItem = (index: number, field: keyof QuotationItem, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     
@@ -238,7 +262,7 @@ export function InvoiceEditDialog({
     const totalGst = itemsList.reduce((sum, item) => sum + item.gst_amount, 0);
     const total = subtotal + totalGst;
     
-    setInvoiceData(prev => ({
+    setQuotationData(prev => ({
       ...prev,
       subtotal,
       tax_amount: totalGst,
@@ -248,7 +272,7 @@ export function InvoiceEditDialog({
 
   const handleSave = async () => {
     try {
-      if (!invoiceData.invoice_no || !invoiceData.customer_id || items.some(item => !item.item_name)) {
+      if (!quotationData.quotation_no || !quotationData.customer_id || items.some(item => !item.item_name)) {
         toast({
           title: "Error",
           description: "Please fill all required fields",
@@ -259,32 +283,32 @@ export function InvoiceEditDialog({
 
       setLoading(true);
 
-      if (invoiceId) {
-        // Update existing invoice
-        const { error: invoiceError } = await supabase
-          .from('invoices')
+      if (quotationId) {
+        // Update existing quotation
+        const { error: quotationError } = await supabase
+          .from('quotations')
           .update({
-            customer_id: invoiceData.customer_id,
-            invoice_date: invoiceData.invoice_date,
-            due_date: invoiceData.due_date || null,
-            invoice_type: invoiceData.invoice_type,
-            payment_status: invoiceData.payment_status as "pending" | "partial" | "paid" | "overdue",
-            subtotal: invoiceData.subtotal,
-            tax_amount: invoiceData.tax_amount,
-            total_amount: invoiceData.total_amount,
+            customer_id: quotationData.customer_id,
+            lead_id: quotationData.lead_id || null,
+            valid_till: quotationData.valid_till || null,
+            terms: quotationData.terms,
+            status: quotationData.status,
+            subtotal: quotationData.subtotal,
+            tax_amount: quotationData.tax_amount,
+            total_amount: quotationData.total_amount,
           })
-          .eq('id', invoiceId);
+          .eq('id', quotationId);
 
-        if (invoiceError) throw invoiceError;
+        if (quotationError) throw quotationError;
 
         // Delete existing items and insert new ones
         await supabase
-          .from('invoice_items')
+          .from('quotation_items')
           .delete()
-          .eq('invoice_id', invoiceId);
+          .eq('quotation_id', quotationId);
 
-        const invoiceItems = items.map(item => ({
-          invoice_id: invoiceId,
+        const quotationItems = items.map(item => ({
+          quotation_id: quotationId,
           sr_no: item.sr_no,
           item_name: item.item_name,
           description: item.description,
@@ -298,8 +322,8 @@ export function InvoiceEditDialog({
         }));
 
         const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
+          .from('quotation_items')
+          .insert(quotationItems);
 
         if (itemsError) throw itemsError;
 
@@ -308,57 +332,41 @@ export function InvoiceEditDialog({
           await logEdit(
             profile.id,
             profile.branch_id,
-            'invoice',
-            invoiceId,
+            'quotation',
+            quotationId,
             originalData,
-            { ...invoiceData, items }
+            { ...quotationData, items }
           );
         }
 
         toast({
           title: "Success",
-          description: "Invoice updated successfully",
+          description: "Quotation updated successfully",
         });
       } else {
-        // Create new invoice - generate invoice number
-        const { data: lastInvoice } = await supabase
-          .from('invoices')
-          .select('invoice_no')
-          .eq('branch_id', profile?.branch_id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        let nextNumber = 1;
-        if (lastInvoice && lastInvoice.length > 0) {
-          const lastNumber = lastInvoice[0].invoice_no.match(/\d+$/);
-          if (lastNumber) {
-            nextNumber = parseInt(lastNumber[0]) + 1;
-          }
-        }
-
-        const invoiceNo = `INV-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
-
-        const { data: invoice, error: invoiceError } = await supabase
-          .from('invoices')
+        // Create new quotation
+        const { data: quotation, error: quotationError } = await supabase
+          .from('quotations')
           .insert({
-            invoice_no: invoiceNo,
-            customer_id: invoiceData.customer_id,
+            quotation_no: quotationData.quotation_no,
+            customer_id: quotationData.customer_id,
+            lead_id: quotationData.lead_id || null,
             branch_id: profile?.branch_id,
-            invoice_date: invoiceData.invoice_date,
-            due_date: invoiceData.due_date || null,
-          invoice_type: invoiceData.invoice_type,
-          payment_status: invoiceData.payment_status as "pending" | "partial" | "paid" | "overdue",
-            subtotal: invoiceData.subtotal,
-            tax_amount: invoiceData.tax_amount,
-            total_amount: invoiceData.total_amount,
+            valid_till: quotationData.valid_till || null,
+            terms: quotationData.terms,
+            status: quotationData.status,
+            subtotal: quotationData.subtotal,
+            tax_amount: quotationData.tax_amount,
+            total_amount: quotationData.total_amount,
+            created_by: profile?.id
           })
           .select()
           .single();
 
-        if (invoiceError) throw invoiceError;
+        if (quotationError) throw quotationError;
 
-        const invoiceItems = items.map(item => ({
-          invoice_id: invoice.id,
+        const quotationItems = items.map(item => ({
+          quotation_id: quotation.id,
           sr_no: item.sr_no,
           item_name: item.item_name,
           description: item.description,
@@ -372,24 +380,24 @@ export function InvoiceEditDialog({
         }));
 
         const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
+          .from('quotation_items')
+          .insert(quotationItems);
 
         if (itemsError) throw itemsError;
 
         toast({
           title: "Success",
-          description: "Invoice created successfully",
+          description: "Quotation created successfully",
         });
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving invoice:', error);
+      console.error('Error saving quotation:', error);
       toast({
         title: "Error",
-        description: "Failed to save invoice",
+        description: "Failed to save quotation",
         variant: "destructive",
       });
     } finally {
@@ -402,30 +410,30 @@ export function InvoiceEditDialog({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {invoiceId ? 'Edit Invoice' : 'Create Invoice'}
+            {quotationId ? 'Edit Quotation' : 'Create Quotation'}
           </DialogTitle>
           <DialogDescription>
-            {invoiceId ? 'Update invoice details and items' : 'Create a new invoice with items'}
+            {quotationId ? 'Update quotation details and items' : 'Create a new quotation with items'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Invoice Header */}
+          {/* Quotation Header */}
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="invoice_no">Invoice Number</Label>
+              <Label htmlFor="quotation_no">Quotation Number</Label>
               <Input
-                id="invoice_no"
-                value={invoiceData.invoice_no}
-                onChange={(e) => setInvoiceData({...invoiceData, invoice_no: e.target.value})}
-                disabled={!!invoiceId}
+                id="quotation_no"
+                value={quotationData.quotation_no}
+                onChange={(e) => setQuotationData({...quotationData, quotation_no: e.target.value})}
+                disabled={!!quotationId}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="customer">Customer</Label>
               <Select 
-                value={invoiceData.customer_id} 
-                onValueChange={(value) => setInvoiceData({...invoiceData, customer_id: value})}
+                value={quotationData.customer_id} 
+                onValueChange={(value) => setQuotationData({...quotationData, customer_id: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select customer" />
@@ -440,64 +448,38 @@ export function InvoiceEditDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="invoice_date">Invoice Date</Label>
+              <Label htmlFor="valid_till">Valid Till</Label>
               <Input
-                id="invoice_date"
+                id="valid_till"
                 type="date"
-                value={invoiceData.invoice_date}
-                onChange={(e) => setInvoiceData({...invoiceData, invoice_date: e.target.value})}
+                value={quotationData.valid_till}
+                onChange={(e) => setQuotationData({...quotationData, valid_till: e.target.value})}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date</Label>
-              <Input
-                id="due_date"
-                type="date"
-                value={invoiceData.due_date}
-                onChange={(e) => setInvoiceData({...invoiceData, due_date: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="invoice_type">Invoice Type</Label>
+              <Label htmlFor="status">Status</Label>
               <Select 
-                value={invoiceData.invoice_type} 
-                onValueChange={(value: "regular" | "proforma") => setInvoiceData({...invoiceData, invoice_type: value})}
+                value={quotationData.status} 
+                onValueChange={(value: "draft" | "sent" | "approved" | "rejected" | "converted") => setQuotationData({...quotationData, status: value})}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="regular">Regular Invoice</SelectItem>
-                  <SelectItem value="proforma">Proforma Invoice</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="payment_status">Payment Status</Label>
-              <Select 
-                value={invoiceData.payment_status} 
-                onValueChange={(value: "pending" | "partial" | "paid" | "overdue") => setInvoiceData({...invoiceData, payment_status: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="converted">Converted</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Invoice Items */}
+          {/* Quotation Items */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Invoice Items</h3>
+              <h3 className="text-lg font-medium">Quotation Items</h3>
               <Button onClick={addItem} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -615,15 +597,15 @@ export function InvoiceEditDialog({
             <div className="w-80 space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>₹{invoiceData.subtotal.toFixed(2)}</span>
+                <span>₹{quotationData.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>GST:</span>
-                <span>₹{invoiceData.tax_amount.toFixed(2)}</span>
+                <span>₹{quotationData.tax_amount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>₹{invoiceData.total_amount.toFixed(2)}</span>
+                <span>₹{quotationData.total_amount.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -634,7 +616,7 @@ export function InvoiceEditDialog({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={loading}>
-              {loading ? 'Saving...' : invoiceId ? 'Update Invoice' : 'Create Invoice'}
+              {loading ? 'Saving...' : quotationId ? 'Update Quotation' : 'Create Quotation'}
             </Button>
           </div>
         </div>

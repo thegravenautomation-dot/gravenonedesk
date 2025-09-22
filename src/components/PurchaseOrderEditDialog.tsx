@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2 } from "lucide-react";
 import { logEdit } from "@/lib/auditLogger";
 
-interface InvoiceItem {
+interface PurchaseOrderItem {
   id?: string;
   sr_no: number;
   item_name: string;
@@ -31,38 +31,41 @@ interface InvoiceItem {
   gst_amount: number;
 }
 
-interface InvoiceEditDialogProps {
+interface PurchaseOrderEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  invoiceId: string | null;
+  purchaseOrderId: string | null;
   onSuccess: () => void;
 }
 
-export function InvoiceEditDialog({
+export function PurchaseOrderEditDialog({
   open,
   onOpenChange,
-  invoiceId,
+  purchaseOrderId,
   onSuccess
-}: InvoiceEditDialogProps) {
+}: PurchaseOrderEditDialogProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
   const [originalData, setOriginalData] = useState<any>(null);
 
-  const [invoiceData, setInvoiceData] = useState({
-    invoice_no: "",
-    customer_id: "",
-    invoice_date: "",
-    due_date: "",
-    invoice_type: "regular" as "regular" | "proforma",
-    payment_status: "pending" as "pending" | "partial" | "paid" | "overdue",
+  const [poData, setPoData] = useState({
+    po_no: "",
+    vendor_id: "",
+    po_date: new Date().toISOString().split('T')[0],
+    delivery_date: "",
+    status: "pending",
+    currency: "INR",
+    supplier_email: "",
+    supplier_contact: "",
+    terms_conditions: "",
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0,
   });
 
-  const [items, setItems] = useState<InvoiceItem[]>([
+  const [items, setItems] = useState<PurchaseOrderItem[]>([
     {
       sr_no: 1,
       item_name: "",
@@ -79,63 +82,91 @@ export function InvoiceEditDialog({
 
   useEffect(() => {
     if (open) {
-      fetchCustomers();
-      if (invoiceId) {
-        fetchInvoiceData();
+      fetchVendors();
+      if (purchaseOrderId) {
+        fetchPurchaseOrderData();
       } else {
         resetForm();
+        generatePONumber();
       }
     }
-  }, [open, invoiceId]);
+  }, [open, purchaseOrderId]);
 
-  const fetchCustomers = async () => {
+  const fetchVendors = async () => {
     try {
       const { data, error } = await supabase
-        .from('customers')
-        .select('id, name, company')
+        .from('vendors')
+        .select('id, name, contact_person, email, phone')
         .eq('branch_id', profile?.branch_id)
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
-      setCustomers(data || []);
+      setVendors(data || []);
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error fetching vendors:', error);
     }
   };
 
-  const fetchInvoiceData = async () => {
-    if (!invoiceId) return;
+  const generatePONumber = async () => {
+    try {
+      const { data } = await supabase
+        .from('purchase_orders')
+        .select('po_no')
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let nextNumber = 1;
+      if (data && data.length > 0) {
+        const lastNumber = data[0].po_no.match(/\d+$/);
+        if (lastNumber) {
+          nextNumber = parseInt(lastNumber[0]) + 1;
+        }
+      }
+
+      const poNo = `PO-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
+      setPoData(prev => ({ ...prev, po_no: poNo }));
+    } catch (error) {
+      console.error('Error generating PO number:', error);
+    }
+  };
+
+  const fetchPurchaseOrderData = async () => {
+    if (!purchaseOrderId) return;
 
     try {
       setLoading(true);
 
-      // Fetch invoice with items
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
+      const { data: po, error: poError } = await supabase
+        .from('purchase_orders')
         .select(`
           *,
-          invoice_items (*)
+          purchase_order_items (*)
         `)
-        .eq('id', invoiceId)
+        .eq('id', purchaseOrderId)
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (poError) throw poError;
 
-      setOriginalData(invoice);
-      setInvoiceData({
-        invoice_no: invoice.invoice_no,
-        customer_id: invoice.customer_id,
-        invoice_date: invoice.invoice_date,
-        due_date: invoice.due_date || "",
-        invoice_type: invoice.invoice_type,
-        payment_status: invoice.payment_status as "pending" | "partial" | "paid" | "overdue",
-        subtotal: invoice.subtotal || 0,
-        tax_amount: invoice.tax_amount || 0,
-        total_amount: invoice.total_amount || 0,
+      setOriginalData(po);
+      setPoData({
+        po_no: po.po_no,
+        vendor_id: po.vendor_id || "",
+        po_date: po.po_date,
+        delivery_date: po.delivery_date || "",
+        status: po.status || "pending",
+        currency: po.currency || "INR",
+        supplier_email: po.supplier_email || "",
+        supplier_contact: po.supplier_contact || "",
+        terms_conditions: po.terms_conditions || "",
+        subtotal: po.subtotal || 0,
+        tax_amount: po.tax_amount || 0,
+        total_amount: po.total_amount || 0,
       });
 
-      if (invoice.invoice_items && invoice.invoice_items.length > 0) {
-        const invoiceItems = invoice.invoice_items.map((item: any) => ({
+      if (po.purchase_order_items && po.purchase_order_items.length > 0) {
+        const poItems = po.purchase_order_items.map((item: any) => ({
           id: item.id,
           sr_no: item.sr_no,
           item_name: item.item_name,
@@ -148,13 +179,13 @@ export function InvoiceEditDialog({
           gst_rate: item.gst_rate,
           gst_amount: item.gst_amount,
         }));
-        setItems(invoiceItems);
+        setItems(poItems);
       }
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      console.error('Error fetching purchase order:', error);
       toast({
         title: "Error",
-        description: "Failed to load invoice data",
+        description: "Failed to load purchase order data",
         variant: "destructive",
       });
     } finally {
@@ -163,13 +194,16 @@ export function InvoiceEditDialog({
   };
 
   const resetForm = () => {
-    setInvoiceData({
-      invoice_no: "",
-      customer_id: "",
-      invoice_date: new Date().toISOString().split('T')[0],
-      due_date: "",
-      invoice_type: "regular",
-      payment_status: "pending",
+    setPoData({
+      po_no: "",
+      vendor_id: "",
+      po_date: new Date().toISOString().split('T')[0],
+      delivery_date: "",
+      status: "pending",
+      currency: "INR",
+      supplier_email: "",
+      supplier_contact: "",
+      terms_conditions: "",
       subtotal: 0,
       tax_amount: 0,
       total_amount: 0,
@@ -190,7 +224,7 @@ export function InvoiceEditDialog({
   };
 
   const addItem = () => {
-    const newItem: InvoiceItem = {
+    const newItem: PurchaseOrderItem = {
       sr_no: items.length + 1,
       item_name: "",
       description: "",
@@ -217,7 +251,7 @@ export function InvoiceEditDialog({
     }
   };
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+  const updateItem = (index: number, field: keyof PurchaseOrderItem, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     
@@ -238,7 +272,7 @@ export function InvoiceEditDialog({
     const totalGst = itemsList.reduce((sum, item) => sum + item.gst_amount, 0);
     const total = subtotal + totalGst;
     
-    setInvoiceData(prev => ({
+    setPoData(prev => ({
       ...prev,
       subtotal,
       tax_amount: totalGst,
@@ -248,7 +282,7 @@ export function InvoiceEditDialog({
 
   const handleSave = async () => {
     try {
-      if (!invoiceData.invoice_no || !invoiceData.customer_id || items.some(item => !item.item_name)) {
+      if (!poData.po_no || !poData.vendor_id || items.some(item => !item.item_name)) {
         toast({
           title: "Error",
           description: "Please fill all required fields",
@@ -259,32 +293,35 @@ export function InvoiceEditDialog({
 
       setLoading(true);
 
-      if (invoiceId) {
-        // Update existing invoice
-        const { error: invoiceError } = await supabase
-          .from('invoices')
+      if (purchaseOrderId) {
+        // Update existing purchase order
+        const { error: poError } = await supabase
+          .from('purchase_orders')
           .update({
-            customer_id: invoiceData.customer_id,
-            invoice_date: invoiceData.invoice_date,
-            due_date: invoiceData.due_date || null,
-            invoice_type: invoiceData.invoice_type,
-            payment_status: invoiceData.payment_status as "pending" | "partial" | "paid" | "overdue",
-            subtotal: invoiceData.subtotal,
-            tax_amount: invoiceData.tax_amount,
-            total_amount: invoiceData.total_amount,
+            vendor_id: poData.vendor_id,
+            po_date: poData.po_date,
+            delivery_date: poData.delivery_date || null,
+            status: poData.status,
+            currency: poData.currency,
+            supplier_email: poData.supplier_email,
+            supplier_contact: poData.supplier_contact,
+            terms_conditions: poData.terms_conditions,
+            subtotal: poData.subtotal,
+            tax_amount: poData.tax_amount,
+            total_amount: poData.total_amount,
           })
-          .eq('id', invoiceId);
+          .eq('id', purchaseOrderId);
 
-        if (invoiceError) throw invoiceError;
+        if (poError) throw poError;
 
         // Delete existing items and insert new ones
         await supabase
-          .from('invoice_items')
+          .from('purchase_order_items')
           .delete()
-          .eq('invoice_id', invoiceId);
+          .eq('purchase_order_id', purchaseOrderId);
 
-        const invoiceItems = items.map(item => ({
-          invoice_id: invoiceId,
+        const poItems = items.map(item => ({
+          purchase_order_id: purchaseOrderId,
           sr_no: item.sr_no,
           item_name: item.item_name,
           description: item.description,
@@ -298,8 +335,8 @@ export function InvoiceEditDialog({
         }));
 
         const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
+          .from('purchase_order_items')
+          .insert(poItems);
 
         if (itemsError) throw itemsError;
 
@@ -308,57 +345,44 @@ export function InvoiceEditDialog({
           await logEdit(
             profile.id,
             profile.branch_id,
-            'invoice',
-            invoiceId,
+            'purchase_order',
+            purchaseOrderId,
             originalData,
-            { ...invoiceData, items }
+            { ...poData, items }
           );
         }
 
         toast({
           title: "Success",
-          description: "Invoice updated successfully",
+          description: "Purchase order updated successfully",
         });
       } else {
-        // Create new invoice - generate invoice number
-        const { data: lastInvoice } = await supabase
-          .from('invoices')
-          .select('invoice_no')
-          .eq('branch_id', profile?.branch_id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        let nextNumber = 1;
-        if (lastInvoice && lastInvoice.length > 0) {
-          const lastNumber = lastInvoice[0].invoice_no.match(/\d+$/);
-          if (lastNumber) {
-            nextNumber = parseInt(lastNumber[0]) + 1;
-          }
-        }
-
-        const invoiceNo = `INV-${new Date().getFullYear()}-${String(nextNumber).padStart(4, '0')}`;
-
-        const { data: invoice, error: invoiceError } = await supabase
-          .from('invoices')
+        // Create new purchase order
+        const { data: po, error: poError } = await supabase
+          .from('purchase_orders')
           .insert({
-            invoice_no: invoiceNo,
-            customer_id: invoiceData.customer_id,
+            po_no: poData.po_no,
+            vendor_id: poData.vendor_id,
             branch_id: profile?.branch_id,
-            invoice_date: invoiceData.invoice_date,
-            due_date: invoiceData.due_date || null,
-          invoice_type: invoiceData.invoice_type,
-          payment_status: invoiceData.payment_status as "pending" | "partial" | "paid" | "overdue",
-            subtotal: invoiceData.subtotal,
-            tax_amount: invoiceData.tax_amount,
-            total_amount: invoiceData.total_amount,
+            po_date: poData.po_date,
+            delivery_date: poData.delivery_date || null,
+            status: poData.status,
+            currency: poData.currency,
+            supplier_email: poData.supplier_email,
+            supplier_contact: poData.supplier_contact,
+            terms_conditions: poData.terms_conditions,
+            subtotal: poData.subtotal,
+            tax_amount: poData.tax_amount,
+            total_amount: poData.total_amount,
+            created_by: profile?.id
           })
           .select()
           .single();
 
-        if (invoiceError) throw invoiceError;
+        if (poError) throw poError;
 
-        const invoiceItems = items.map(item => ({
-          invoice_id: invoice.id,
+        const poItems = items.map(item => ({
+          purchase_order_id: po.id,
           sr_no: item.sr_no,
           item_name: item.item_name,
           description: item.description,
@@ -372,24 +396,24 @@ export function InvoiceEditDialog({
         }));
 
         const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
+          .from('purchase_order_items')
+          .insert(poItems);
 
         if (itemsError) throw itemsError;
 
         toast({
           title: "Success",
-          description: "Invoice created successfully",
+          description: "Purchase order created successfully",
         });
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving invoice:', error);
+      console.error('Error saving purchase order:', error);
       toast({
         title: "Error",
-        description: "Failed to save invoice",
+        description: "Failed to save purchase order",
         variant: "destructive",
       });
     } finally {
@@ -402,102 +426,103 @@ export function InvoiceEditDialog({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {invoiceId ? 'Edit Invoice' : 'Create Invoice'}
+            {purchaseOrderId ? 'Edit Purchase Order' : 'Create Purchase Order'}
           </DialogTitle>
           <DialogDescription>
-            {invoiceId ? 'Update invoice details and items' : 'Create a new invoice with items'}
+            {purchaseOrderId ? 'Update purchase order details and items' : 'Create a new purchase order with items'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Invoice Header */}
+          {/* PO Header */}
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="invoice_no">Invoice Number</Label>
+              <Label htmlFor="po_no">PO Number</Label>
               <Input
-                id="invoice_no"
-                value={invoiceData.invoice_no}
-                onChange={(e) => setInvoiceData({...invoiceData, invoice_no: e.target.value})}
-                disabled={!!invoiceId}
+                id="po_no"
+                value={poData.po_no}
+                onChange={(e) => setPoData({...poData, po_no: e.target.value})}
+                disabled={!!purchaseOrderId}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
+              <Label htmlFor="vendor">Vendor</Label>
               <Select 
-                value={invoiceData.customer_id} 
-                onValueChange={(value) => setInvoiceData({...invoiceData, customer_id: value})}
+                value={poData.vendor_id} 
+                onValueChange={(value) => setPoData({...poData, vendor_id: value})}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
+                  <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} {customer.company && `(${customer.company})`}
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name} {vendor.contact_person && `(${vendor.contact_person})`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="invoice_date">Invoice Date</Label>
+              <Label htmlFor="po_date">PO Date</Label>
               <Input
-                id="invoice_date"
+                id="po_date"
                 type="date"
-                value={invoiceData.invoice_date}
-                onChange={(e) => setInvoiceData({...invoiceData, invoice_date: e.target.value})}
+                value={poData.po_date}
+                onChange={(e) => setPoData({...poData, po_date: e.target.value})}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date</Label>
+              <Label htmlFor="delivery_date">Delivery Date</Label>
               <Input
-                id="due_date"
+                id="delivery_date"
                 type="date"
-                value={invoiceData.due_date}
-                onChange={(e) => setInvoiceData({...invoiceData, due_date: e.target.value})}
+                value={poData.delivery_date}
+                onChange={(e) => setPoData({...poData, delivery_date: e.target.value})}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="invoice_type">Invoice Type</Label>
+              <Label htmlFor="status">Status</Label>
               <Select 
-                value={invoiceData.invoice_type} 
-                onValueChange={(value: "regular" | "proforma") => setInvoiceData({...invoiceData, invoice_type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regular">Regular Invoice</SelectItem>
-                  <SelectItem value="proforma">Proforma Invoice</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="payment_status">Payment Status</Label>
-              <Select 
-                value={invoiceData.payment_status} 
-                onValueChange={(value: "pending" | "partial" | "paid" | "overdue") => setInvoiceData({...invoiceData, payment_status: value})}
+                value={poData.status} 
+                onValueChange={(value) => setPoData({...poData, status: value})}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Select 
+                value={poData.currency} 
+                onValueChange={(value) => setPoData({...poData, currency: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INR">INR</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Invoice Items */}
+          {/* Purchase Order Items */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Invoice Items</h3>
+              <h3 className="text-lg font-medium">Purchase Order Items</h3>
               <Button onClick={addItem} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -615,15 +640,15 @@ export function InvoiceEditDialog({
             <div className="w-80 space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>₹{invoiceData.subtotal.toFixed(2)}</span>
+                <span>₹{poData.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>GST:</span>
-                <span>₹{invoiceData.tax_amount.toFixed(2)}</span>
+                <span>₹{poData.tax_amount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total:</span>
-                <span>₹{invoiceData.total_amount.toFixed(2)}</span>
+                <span>₹{poData.total_amount.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -634,7 +659,7 @@ export function InvoiceEditDialog({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={loading}>
-              {loading ? 'Saving...' : invoiceId ? 'Update Invoice' : 'Create Invoice'}
+              {loading ? 'Saving...' : purchaseOrderId ? 'Update Purchase Order' : 'Create Purchase Order'}
             </Button>
           </div>
         </div>

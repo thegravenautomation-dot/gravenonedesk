@@ -16,7 +16,7 @@ interface ActionButtonsProps {
   editDisabledReason?: string;
   deleteDisabledReason?: string;
   viewDisabledReason?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "ghost";
   isLoading?: boolean;
 }
