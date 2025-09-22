@@ -162,12 +162,12 @@ export function QuotationTemplate({
                 <TableCell className="border border-gray-300 text-center font-mono text-sm">{item.hsn_code}</TableCell>
                 <TableCell className="border border-gray-300 text-center font-medium">{item.quantity}</TableCell>
                 <TableCell className="border border-gray-300 text-center">{item.unit}</TableCell>
-                <TableCell className="border border-gray-300 text-right font-mono">₹{item.unit_price.toFixed(2)}</TableCell>
-                <TableCell className="border border-gray-300 text-right font-mono">₹{item.total_amount.toFixed(2)}</TableCell>
-                <TableCell className="border border-gray-300 text-center">{item.gst_rate}%</TableCell>
-                <TableCell className="border border-gray-300 text-right font-mono">₹{item.gst_amount.toFixed(2)}</TableCell>
+                <TableCell className="border border-gray-300 text-right font-mono">₹{(Number(item.unit_price) || 0).toFixed(2)}</TableCell>
+                <TableCell className="border border-gray-300 text-right font-mono">₹{(Number(item.total_amount) || 0).toFixed(2)}</TableCell>
+                <TableCell className="border border-gray-300 text-center">{Number(item.gst_rate) || 0}%</TableCell>
+                <TableCell className="border border-gray-300 text-right font-mono">₹{(Number(item.gst_amount) || 0).toFixed(2)}</TableCell>
                 <TableCell className="border border-gray-300 text-right font-bold text-blue-700">
-                  ₹{(item.total_amount + item.gst_amount).toFixed(2)}
+                  ₹{((Number(item.total_amount) || 0) + (Number(item.gst_amount) || 0)).toFixed(2)}
                 </TableCell>
               </TableRow>
             ))}
@@ -182,16 +182,16 @@ export function QuotationTemplate({
             <TableBody>
               <TableRow className="bg-blue-50">
                 <TableCell className="border border-gray-300 font-semibold text-gray-700">Subtotal:</TableCell>
-                <TableCell className="border border-gray-300 text-right font-mono text-lg">₹{quotationData.subtotal.toFixed(2)}</TableCell>
+                <TableCell className="border border-gray-300 text-right font-mono text-lg">₹{(Number(quotationData.subtotal) || 0).toFixed(2)}</TableCell>
               </TableRow>
               <TableRow className="bg-green-50">
                 <TableCell className="border border-gray-300 font-semibold text-gray-700">Total GST:</TableCell>
-                <TableCell className="border border-gray-300 text-right font-mono text-lg">₹{quotationData.tax_amount.toFixed(2)}</TableCell>
+                <TableCell className="border border-gray-300 text-right font-mono text-lg">₹{(Number(quotationData.tax_amount) || 0).toFixed(2)}</TableCell>
               </TableRow>
               <TableRow className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <TableCell className="border border-blue-500 font-bold text-xl">TOTAL AMOUNT:</TableCell>
                 <TableCell className="border border-blue-500 text-right font-bold text-xl">
-                  ₹{quotationData.total_amount.toFixed(2)}
+                  ₹{(Number(quotationData.total_amount) || 0).toFixed(2)}
                 </TableCell>
               </TableRow>
             </TableBody>

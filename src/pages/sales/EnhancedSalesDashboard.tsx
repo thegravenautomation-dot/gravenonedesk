@@ -15,6 +15,7 @@ import { ActionButtons } from "@/components/common/ActionButtons";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { QuotationEditDialog } from "@/components/QuotationEditDialog";
 import { InvoiceEditDialog } from "@/components/InvoiceEditDialog";
+import { EditableQuotationView } from "@/components/EditableQuotationView";
 import { checkPermissions, getActionButtons } from "@/lib/permissions";
 import { logDelete } from "@/lib/auditLogger";
 
@@ -31,6 +32,7 @@ export default function EnhancedSalesDashboard() {
   // Dialog states
   const [quotationEditDialog, setQuotationEditDialog] = useState({ open: false, id: null });
   const [invoiceEditDialog, setInvoiceEditDialog] = useState({ open: false, id: null });
+  const [quotationViewDialog, setQuotationViewDialog] = useState({ open: false, id: null });
   const [deleteDialog, setDeleteDialog] = useState({ 
     open: false, 
     type: null as 'quotation' | 'invoice' | 'customer' | null, 
@@ -269,10 +271,12 @@ export default function EnhancedSalesDashboard() {
                     <ActionButtons
                       showEdit={actionButtons.showEdit}
                       showDelete={actionButtons.showDelete}
+                      showView={true}
                       editDisabled={!actionButtons.showEdit}
                       deleteDisabled={!actionButtons.showDelete}
                       editDisabledReason={actionButtons.editDisabledReason}
                       deleteDisabledReason={actionButtons.deleteDisabledReason}
+                      onView={() => setQuotationViewDialog({ open: true, id: quotation.id })}
                       onEdit={() => setQuotationEditDialog({ open: true, id: quotation.id })}
                       onDelete={() => setDeleteDialog({
                         open: true,
@@ -594,6 +598,14 @@ export default function EnhancedSalesDashboard() {
           setInvoiceEditDialog({ open: false, id: null });
         }}
       />
+
+      {/* Quotation View Dialog */}
+      {quotationViewDialog.open && quotationViewDialog.id && (
+        <EditableQuotationView
+          quotationId={quotationViewDialog.id}
+          onClose={() => setQuotationViewDialog({ open: false, id: null })}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
