@@ -268,6 +268,42 @@ export type Database = {
         }
         Relationships: []
       }
+      courier_configs: {
+        Row: {
+          api_credentials: Json | null
+          api_endpoint: string | null
+          branch_id: string
+          courier_provider: Database["public"]["Enums"]["courier_provider"]
+          created_at: string
+          id: string
+          is_active: boolean | null
+          rate_config: Json | null
+          updated_at: string
+        }
+        Insert: {
+          api_credentials?: Json | null
+          api_endpoint?: string | null
+          branch_id: string
+          courier_provider: Database["public"]["Enums"]["courier_provider"]
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          rate_config?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          api_credentials?: Json | null
+          api_endpoint?: string | null
+          branch_id?: string
+          courier_provider?: Database["public"]["Enums"]["courier_provider"]
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          rate_config?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_ledger: {
         Row: {
           balance: number | null
@@ -1105,6 +1141,7 @@ export type Database = {
           order_no: string
           po_pdf_path: string | null
           quotation_id: string | null
+          shipment_id: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           subtotal: number | null
           tax_amount: number | null
@@ -1123,6 +1160,7 @@ export type Database = {
           order_no: string
           po_pdf_path?: string | null
           quotation_id?: string | null
+          shipment_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -1141,6 +1179,7 @@ export type Database = {
           order_no?: string
           po_pdf_path?: string | null
           quotation_id?: string | null
+          shipment_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -1167,6 +1206,13 @@ export type Database = {
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
             referencedColumns: ["id"]
           },
         ]
@@ -1641,6 +1687,135 @@ export type Database = {
           },
         ]
       }
+      shipments: {
+        Row: {
+          actual_delivery_date: string | null
+          awb_file_path: string | null
+          awb_number: string | null
+          booking_date: string | null
+          branch_id: string
+          cod_amount: number | null
+          courier_provider:
+            | Database["public"]["Enums"]["courier_provider"]
+            | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          delivery_type: string | null
+          dimensions: Json | null
+          expected_delivery_date: string | null
+          id: string
+          last_tracked_at: string | null
+          order_id: string
+          shipment_status: Database["public"]["Enums"]["shipment_status"] | null
+          shipping_address: Json
+          special_instructions: string | null
+          tracking_data: Json | null
+          tracking_url: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          awb_file_path?: string | null
+          awb_number?: string | null
+          booking_date?: string | null
+          branch_id: string
+          cod_amount?: number | null
+          courier_provider?:
+            | Database["public"]["Enums"]["courier_provider"]
+            | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          delivery_type?: string | null
+          dimensions?: Json | null
+          expected_delivery_date?: string | null
+          id?: string
+          last_tracked_at?: string | null
+          order_id: string
+          shipment_status?:
+            | Database["public"]["Enums"]["shipment_status"]
+            | null
+          shipping_address: Json
+          special_instructions?: string | null
+          tracking_data?: Json | null
+          tracking_url?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          awb_file_path?: string | null
+          awb_number?: string | null
+          booking_date?: string | null
+          branch_id?: string
+          cod_amount?: number | null
+          courier_provider?:
+            | Database["public"]["Enums"]["courier_provider"]
+            | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          delivery_type?: string | null
+          dimensions?: Json | null
+          expected_delivery_date?: string | null
+          id?: string
+          last_tracked_at?: string | null
+          order_id?: string
+          shipment_status?:
+            | Database["public"]["Enums"]["shipment_status"]
+            | null
+          shipping_address?: Json
+          special_instructions?: string | null
+          tracking_data?: Json | null
+          tracking_url?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      shipping_labels: {
+        Row: {
+          barcode_data: string | null
+          created_at: string
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          label_pdf_path: string | null
+          label_size: string | null
+          shipment_id: string
+        }
+        Insert: {
+          barcode_data?: string | null
+          created_at?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          label_pdf_path?: string | null
+          label_size?: string | null
+          shipment_id: string
+        }
+        Update: {
+          barcode_data?: string | null
+          created_at?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          label_pdf_path?: string | null
+          label_size?: string | null
+          shipment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_labels_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_status: {
         Row: {
           branch_id: string
@@ -1766,6 +1941,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      generate_tracking_barcode: {
+        Args: { p_shipment_id: string }
+        Returns: string
+      }
       get_employee_data_secure: {
         Args: { p_employee_id?: string; p_include_sensitive?: boolean }
         Returns: {
@@ -1847,6 +2026,15 @@ export type Database = {
     }
     Enums: {
       attendance_status: "present" | "absent" | "half_day" | "late"
+      courier_provider:
+        | "dtdc"
+        | "shree_maruti"
+        | "bluedart"
+        | "delhivery"
+        | "fedex"
+        | "dhl"
+        | "aramex"
+        | "other"
       employee_status: "active" | "inactive" | "terminated"
       invoice_type: "regular" | "proforma"
       lead_status:
@@ -1874,6 +2062,15 @@ export type Database = {
         | "cancelled"
       payment_status: "pending" | "partial" | "paid" | "overdue"
       quotation_status: "draft" | "sent" | "approved" | "rejected" | "converted"
+      shipment_status:
+        | "pending"
+        | "booked"
+        | "picked_up"
+        | "in_transit"
+        | "out_for_delivery"
+        | "delivered"
+        | "returned"
+        | "cancelled"
       user_role:
         | "admin"
         | "manager"
@@ -2013,6 +2210,16 @@ export const Constants = {
   public: {
     Enums: {
       attendance_status: ["present", "absent", "half_day", "late"],
+      courier_provider: [
+        "dtdc",
+        "shree_maruti",
+        "bluedart",
+        "delhivery",
+        "fedex",
+        "dhl",
+        "aramex",
+        "other",
+      ],
       employee_status: ["active", "inactive", "terminated"],
       invoice_type: ["regular", "proforma"],
       lead_status: [
@@ -2043,6 +2250,16 @@ export const Constants = {
       ],
       payment_status: ["pending", "partial", "paid", "overdue"],
       quotation_status: ["draft", "sent", "approved", "rejected", "converted"],
+      shipment_status: [
+        "pending",
+        "booked",
+        "picked_up",
+        "in_transit",
+        "out_for_delivery",
+        "delivered",
+        "returned",
+        "cancelled",
+      ],
       user_role: [
         "admin",
         "manager",

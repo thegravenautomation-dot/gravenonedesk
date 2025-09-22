@@ -1,323 +1,223 @@
-import React, { useState, useEffect } from 'react'
-import { DashboardLayout } from '@/components/DashboardLayout'
-import { DashboardCard } from '@/components/DashboardCard'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Truck, Package, Clock, CheckCircle } from 'lucide-react'
-
-interface DispatchOrder {
-  id: string
-  order_number: string
-  customer_name: string
-  destination: string
-  transporter: string
-  status: 'pending' | 'in_transit' | 'delivered' | 'cancelled'
-  dispatch_date: string
-  expected_delivery: string
-  created_at: string
-}
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { ShipmentManager } from "@/components/ShipmentManager";
+import { ShippingLabelGenerator } from "@/components/ShippingLabelGenerator";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Package, Search, MoreHorizontal, Plane, Clock, CheckCircle, Eye } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function DispatchDashboard() {
-  const [orders, setOrders] = useState<DispatchOrder[]>([
-    {
-      id: '1',
-      order_number: 'ORD-001',
-      customer_name: 'ABC Industries',
-      destination: 'Mumbai, Maharashtra',
-      transporter: 'XYZ Logistics',
-      status: 'pending',
-      dispatch_date: new Date().toISOString(),
-      expected_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      order_number: 'ORD-002',
-      customer_name: 'Tech Solutions Ltd',
-      destination: 'Delhi, Delhi',
-      transporter: 'Quick Transport',
-      status: 'in_transit',
-      dispatch_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      expected_delivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ])
-  const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [newOrderOpen, setNewOrderOpen] = useState(false)
-  const { toast } = useToast()
+  const { profile } = useAuth();
+  const [shipments, setShipments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const [newOrder, setNewOrder] = useState({
-    order_number: '',
-    customer_name: '',
-    destination: '',
-    transporter: '',
-    expected_delivery: '',
-  })
+  useEffect(() => {
+    if (profile?.branch_id) {
+      fetchShipments();
+    }
+  }, [profile?.branch_id]);
 
-  const handleCreateOrder = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const fetchShipments = async () => {
+    setLoading(true);
     try {
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`
-      const newOrderData: DispatchOrder = {
-        id: Date.now().toString(),
-        order_number: orderNumber,
-        customer_name: newOrder.customer_name,
-        destination: newOrder.destination,
-        transporter: newOrder.transporter,
-        status: 'pending',
-        dispatch_date: new Date().toISOString(),
-        expected_delivery: newOrder.expected_delivery,
-        created_at: new Date().toISOString(),
-      }
+      const { data, error } = await supabase
+        .from('shipments')
+        .select(`
+          id, order_id, awb_number, courier_provider, shipment_status,
+          booking_date, expected_delivery_date, actual_delivery_date,
+          tracking_url, weight_kg, cod_amount, created_at,
+          orders (order_no, customers (name, city))
+        `)
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false });
 
-      setOrders(prev => [newOrderData, ...prev])
-
-      toast({
-        title: 'Success',
-        description: 'Dispatch order created successfully',
-      })
-
-      setNewOrderOpen(false)
-      setNewOrder({
-        order_number: '',
-        customer_name: '',
-        destination: '',
-        transporter: '',
-        expected_delivery: '',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create dispatch order',
-        variant: 'destructive',
-      })
+      if (error) throw error;
+      setShipments(data || []);
+    } catch (error: any) {
+      toast.error('Failed to fetch shipments: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const updateOrderStatus = (orderId: string, status: DispatchOrder['status']) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status } : order
-    ))
-    toast({
-      title: 'Success',
-      description: 'Order status updated successfully',
-    })
-  }
+  const updateShipmentStatus = async (shipmentId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('shipments')
+        .update({ 
+          shipment_status: newStatus,
+          actual_delivery_date: newStatus === 'delivered' ? new Date().toISOString().split('T')[0] : null
+        })
+        .eq('id', shipmentId);
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      in_transit: 'bg-blue-100 text-blue-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
+      if (error) throw error;
+      
+      fetchShipments();
+      toast.success("Shipment status updated successfully");
+    } catch (error: any) {
+      toast.error('Failed to update status: ' + error.message);
     }
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
-  }
+  };
+
+  const filteredShipments = shipments.filter(shipment => {
+    const matchesSearch = 
+      shipment.orders?.order_no?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipment.orders?.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      shipment.awb_number?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || shipment.shipment_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const stats = {
-    totalOrders: orders.length,
-    pendingOrders: orders.filter(o => o.status === 'pending').length,
-    inTransit: orders.filter(o => o.status === 'in_transit').length,
-    deliveredToday: orders.filter(o => 
-      o.status === 'delivered' && 
-      new Date(o.dispatch_date).toDateString() === new Date().toDateString()
-    ).length,
-  }
+    totalShipments: shipments.length,
+    pendingShipments: shipments.filter(s => s.shipment_status === 'pending').length,
+    inTransitShipments: shipments.filter(s => ['booked', 'in_transit'].includes(s.shipment_status)).length,
+    deliveredToday: shipments.filter(s => s.shipment_status === 'delivered' && s.actual_delivery_date === new Date().toISOString().split('T')[0]).length
+  };
 
   return (
-    <DashboardLayout title="Dispatch Dashboard" subtitle="Manage orders, shipments, and delivery tracking">
+    <DashboardLayout title="Dispatch Dashboard" subtitle="Manage shipments with AWB tracking">
       <div className="space-y-6">
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <DashboardCard
-            title="Total Orders"
-            value={stats.totalOrders.toString()}
-            icon={Package}
-            variant="blue"
-          />
-          <DashboardCard
-            title="Pending"
-            value={stats.pendingOrders.toString()}
-            icon={Clock}
-            variant="orange"
-          />
-          <DashboardCard
-            title="In Transit"
-            value={stats.inTransit.toString()}
-            icon={Truck}
-            variant="purple"
-          />
-          <DashboardCard
-            title="Delivered Today"
-            value={stats.deliveredToday.toString()}
-            icon={CheckCircle}
-            variant="green"
-          />
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-blue-600" />
+                <span className="text-2xl font-bold">{stats.totalShipments}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <span className="text-2xl font-bold">{stats.pendingShipments}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">In Transit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Plane className="h-5 w-5 text-blue-600" />
+                <span className="text-2xl font-bold">{stats.inTransitShipments}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Delivered Today</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="text-2xl font-bold">{stats.deliveredToday}</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="flex gap-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search orders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_transit">In Transit</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search orders, customers, or AWB..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-          
-          <Dialog open={newOrderOpen} onOpenChange={setNewOrderOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Order
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create Dispatch Order</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleCreateOrder} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customer_name">Customer Name</Label>
-                  <Input
-                    id="customer_name"
-                    value={newOrder.customer_name}
-                    onChange={(e) => setNewOrder({ ...newOrder, customer_name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="destination">Destination</Label>
-                  <Input
-                    id="destination"
-                    value={newOrder.destination}
-                    onChange={(e) => setNewOrder({ ...newOrder, destination: e.target.value })}
-                    placeholder="City, State"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transporter">Transporter</Label>
-                  <Input
-                    id="transporter"
-                    value={newOrder.transporter}
-                    onChange={(e) => setNewOrder({ ...newOrder, transporter: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expected_delivery">Expected Delivery</Label>
-                  <Input
-                    id="expected_delivery"
-                    type="date"
-                    value={newOrder.expected_delivery}
-                    onChange={(e) => setNewOrder({ ...newOrder, expected_delivery: e.target.value })}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full">Create Order</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_transit">In Transit</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Orders Table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Destination</TableHead>
-                <TableHead>Transporter</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Expected Delivery</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filteredOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    No orders found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.order_number}</TableCell>
-                    <TableCell>{order.customer_name}</TableCell>
-                    <TableCell>{order.destination}</TableCell>
-                    <TableCell>{order.transporter}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(order.expected_delivery).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Select 
-                        value={order.status} 
-                        onValueChange={(value) => updateOrderStatus(order.id, value as DispatchOrder['status'])}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_transit">In Transit</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
+        <ShipmentManager onShipmentCreated={() => fetchShipments()} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Shipments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading shipments...</div>
+            ) : filteredShipments.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p>No shipments found. Create your first shipment to get started.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order No</TableHead>
+                    <TableHead>AWB Number</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredShipments.map((shipment) => (
+                    <TableRow key={shipment.id}>
+                      <TableCell>{shipment.orders?.order_no}</TableCell>
+                      <TableCell>{shipment.awb_number || 'Not Assigned'}</TableCell>
+                      <TableCell>{shipment.orders?.customers?.name}</TableCell>
+                      <TableCell>
+                        <Badge>{shipment.shipment_status}</Badge>
+                      </TableCell>
+                      <TableCell className="flex gap-2">
+                        <ShippingLabelGenerator shipmentId={shipment.id} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => updateShipmentStatus(shipment.id, 'booked')}>
+                              Mark Booked
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateShipmentStatus(shipment.id, 'delivered')}>
+                              Mark Delivered
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
-  )
+  );
 }
