@@ -50,7 +50,7 @@ export default function DispatchDashboard() {
     }
   };
 
-  const updateShipmentStatus = async (shipmentId: string, newStatus: string) => {
+  const updateShipmentStatus = async (shipmentId: string, newStatus: 'pending' | 'booked' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'returned' | 'cancelled') => {
     try {
       const { error } = await supabase
         .from('shipments')
