@@ -1732,6 +1732,143 @@ export type Database = {
           },
         ]
       }
+      rfq_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          gst_rate: number | null
+          hsn_code: string | null
+          id: string
+          item_name: string
+          quantity: number
+          required_delivery_date: string | null
+          rfq_id: string
+          specification: string | null
+          sr_no: number
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name: string
+          quantity?: number
+          required_delivery_date?: string | null
+          rfq_id: string
+          specification?: string | null
+          sr_no: number
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          gst_rate?: number | null
+          hsn_code?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          required_delivery_date?: string | null
+          rfq_id?: string
+          specification?: string | null
+          sr_no?: number
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_items_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_vendors: {
+        Row: {
+          id: string
+          invited_at: string
+          notified_at: string | null
+          rfq_id: string
+          status: string
+          vendor_id: string
+        }
+        Insert: {
+          id?: string
+          invited_at?: string
+          notified_at?: string | null
+          rfq_id: string
+          status?: string
+          vendor_id: string
+        }
+        Update: {
+          id?: string
+          invited_at?: string
+          notified_at?: string | null
+          rfq_id?: string
+          status?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_vendors_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_vendors_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfqs: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string
+          id: string
+          rfq_no: string
+          status: string
+          terms_conditions: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date: string
+          id?: string
+          rfq_no: string
+          status?: string
+          terms_conditions?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          rfq_no?: string
+          status?: string
+          terms_conditions?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shipments: {
         Row: {
           actual_delivery_date: string | null
@@ -1902,6 +2039,242 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      vendor_applications: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          address: string | null
+          annual_turnover: number | null
+          application_date: string
+          bank_name: string | null
+          branch_id: string
+          business_type: string | null
+          city: string | null
+          company_name: string
+          contact_person: string
+          created_at: string
+          email: string
+          gstin: string | null
+          id: string
+          ifsc_code: string | null
+          pan: string | null
+          phone: string
+          pincode: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          years_in_business: number | null
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          address?: string | null
+          annual_turnover?: number | null
+          application_date?: string
+          bank_name?: string | null
+          branch_id: string
+          business_type?: string | null
+          city?: string | null
+          company_name: string
+          contact_person: string
+          created_at?: string
+          email: string
+          gstin?: string | null
+          id?: string
+          ifsc_code?: string | null
+          pan?: string | null
+          phone: string
+          pincode?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          years_in_business?: number | null
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          address?: string | null
+          annual_turnover?: number | null
+          application_date?: string
+          bank_name?: string | null
+          branch_id?: string
+          business_type?: string | null
+          city?: string | null
+          company_name?: string
+          contact_person?: string
+          created_at?: string
+          email?: string
+          gstin?: string | null
+          id?: string
+          ifsc_code?: string | null
+          pan?: string | null
+          phone?: string
+          pincode?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          years_in_business?: number | null
+        }
+        Relationships: []
+      }
+      vendor_quotation_items: {
+        Row: {
+          created_at: string
+          delivery_days: number | null
+          id: string
+          quotation_id: string
+          remarks: string | null
+          rfq_item_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          delivery_days?: number | null
+          id?: string
+          quotation_id: string
+          remarks?: string | null
+          rfq_item_id: string
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          delivery_days?: number | null
+          id?: string
+          quotation_id?: string
+          remarks?: string | null
+          rfq_item_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_quotation_items_rfq_item_id_fkey"
+            columns: ["rfq_item_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_quotations: {
+        Row: {
+          created_at: string
+          currency: string | null
+          delivery_terms: string | null
+          id: string
+          payment_terms: string | null
+          quotation_no: string
+          remarks: string | null
+          rfq_id: string
+          status: string
+          submission_date: string
+          submitted_by: string
+          total_amount: number
+          updated_at: string
+          valid_till: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          delivery_terms?: string | null
+          id?: string
+          payment_terms?: string | null
+          quotation_no: string
+          remarks?: string | null
+          rfq_id: string
+          status?: string
+          submission_date?: string
+          submitted_by: string
+          total_amount?: number
+          updated_at?: string
+          valid_till?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          delivery_terms?: string | null
+          id?: string
+          payment_terms?: string | null
+          quotation_no?: string
+          remarks?: string | null
+          rfq_id?: string
+          status?: string
+          submission_date?: string
+          submitted_by?: string
+          total_amount?: number
+          updated_at?: string
+          valid_till?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_quotations_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_quotations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_users: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary_contact: boolean | null
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary_contact?: boolean | null
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary_contact?: boolean | null
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_users_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors: {
         Row: {
