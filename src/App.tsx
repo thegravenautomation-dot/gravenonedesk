@@ -16,11 +16,14 @@ import SalesDashboard from "@/pages/sales/SalesDashboard";
 import AccountsDashboard from "@/pages/accounts/AccountsDashboard";
 import HRDashboard from "@/pages/hr/HRDashboard";
 import ProcurementDashboard from "@/pages/procurement/ProcurementDashboard";
+import RFQDashboard from "@/pages/procurement/RFQDashboard";
 import DispatchDashboard from "@/pages/dispatch/DispatchDashboard";
 import EmployeePortal from "@/pages/employee/EmployeePortal";
 import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
 import SecurityDashboard from "@/pages/SecurityDashboard";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import VendorRegistration from "@/pages/vendor/VendorRegistration";
+import VendorPortal from "@/pages/vendor/VendorPortal";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -150,6 +153,29 @@ function App() {
                       <RoleRoute allowedRoles={['admin', 'manager', 'procurement']}>
                         <ProcurementDashboard />
                       </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+
+                <Route 
+                  path="/procurement/rfq" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin', 'manager', 'procurement']}>
+                        <RFQDashboard />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+
+                {/* Vendor Routes */}
+                <Route path="/vendor/register" element={<VendorRegistration />} />
+                
+                <Route 
+                  path="/vendor/portal" 
+                  element={
+                    <ProtectedRoute>
+                      <VendorPortal />
                     </ProtectedRoute>
                   } 
                 />

@@ -295,10 +295,13 @@ export default function ProcurementDashboard() {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="vendors" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
             <TabsTrigger value="orders">Orders to Process</TabsTrigger>
             <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
+            <TabsTrigger value="rfq" onClick={() => window.location.href = '/procurement/rfq'}>
+              RFQ Management
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="vendors" className="space-y-4">

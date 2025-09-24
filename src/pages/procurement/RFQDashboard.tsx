@@ -13,6 +13,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import RFQManager from '@/components/RFQManager';
 import { FileText, Plus, Search, Eye, Edit, BarChart3, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { VendorWorkflowGuide } from '@/components/VendorWorkflowGuide';
 
 interface RFQ {
   id: string;
@@ -294,6 +295,36 @@ export default function RFQDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Workflow Guide */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <VendorWorkflowGuide userType="procurement" />
+          </div>
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Button onClick={() => setRfqDialogOpen(true)} className="h-20 flex-col">
+                    <Plus className="h-6 w-6 mb-2" />
+                    Create New RFQ
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col"
+                    onClick={() => window.location.href = '/vendor/register'}
+                  >
+                    <FileText className="h-6 w-6 mb-2" />
+                    Vendor Registration
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content */}
