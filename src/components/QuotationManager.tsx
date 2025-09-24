@@ -224,8 +224,6 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
       totalGst: Math.round(totalGst * 100) / 100,
       total: Math.round(total * 100) / 100
     };
-    
-    return { subtotal, totalGst, total };
   };
 
   const handleSaveQuotation = async () => {
