@@ -2362,6 +2362,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      can_vendor_access_rfq: {
+        Args: { p_rfq_id: string; p_user_id: string }
+        Returns: boolean
+      }
       generate_tracking_barcode: {
         Args: { p_shipment_id: string }
         Returns: string
