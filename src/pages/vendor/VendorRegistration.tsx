@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,9 +37,9 @@ export default function VendorRegistration() {
 
   const [branches, setBranches] = useState<any[]>([]);
 
-  useState(() => {
+  useEffect(() => {
     fetchBranches();
-  });
+  }, []);
 
   const fetchBranches = async () => {
     const { data } = await supabase.from('branches').select('id, name, city').eq('is_active', true);
