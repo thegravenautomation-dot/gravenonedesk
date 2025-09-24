@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { DashboardCard } from '@/components/DashboardCard'
 import { Button } from '@/components/ui/button'
@@ -71,6 +72,7 @@ interface Order {
 }
 
 export default function ProcurementDashboard() {
+  const navigate = useNavigate()
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -299,8 +301,13 @@ export default function ProcurementDashboard() {
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
             <TabsTrigger value="orders">Orders to Process</TabsTrigger>
             <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
-            <TabsTrigger value="rfq" onClick={() => window.location.href = '/procurement/rfq'}>
-              RFQ Management
+            <TabsTrigger 
+              value="rfq" 
+              asChild
+            >
+              <button onClick={() => navigate('/procurement/rfq')}>
+                RFQ Management
+              </button>
             </TabsTrigger>
           </TabsList>
 

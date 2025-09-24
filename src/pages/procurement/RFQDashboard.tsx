@@ -316,11 +316,23 @@ export default function RFQDashboard() {
                   <Button 
                     variant="outline" 
                     className="h-20 flex-col"
-                    onClick={() => window.location.href = '/vendor/register'}
+                    onClick={() => window.open('/vendor/register', '_blank')}
                   >
                     <FileText className="h-6 w-6 mb-2" />
                     Vendor Registration
                   </Button>
+                </div>
+                <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Getting Started</h4>
+                  <p className="text-sm text-yellow-700">
+                    To get started with RFQ Management:
+                  </p>
+                  <ol className="text-sm text-yellow-700 mt-2 list-decimal list-inside space-y-1">
+                    <li>First, add vendors or approve vendor applications</li>
+                    <li>Create your first RFQ with product requirements</li>
+                    <li>Send RFQ to selected vendors</li>
+                    <li>Review and compare quotations received</li>
+                  </ol>
                 </div>
               </CardContent>
             </Card>
