@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { Resend } from 'npm:resend@4.0.0'
+import { Resend } from 'https://esm.sh/resend@4.0.0'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0'
 
 const corsHeaders = {
@@ -82,7 +82,7 @@ serve(async (req) => {
       to: [to],
       subject: finalSubject,
       html: finalMessage.replace(/\n/g, '<br>'),
-      reply_to: profile.email
+      replyTo: profile.email
     })
 
     if (emailResponse.error) {

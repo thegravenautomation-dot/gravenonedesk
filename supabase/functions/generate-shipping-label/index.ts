@@ -61,7 +61,7 @@ serve(async (req) => {
     console.error('Error generating shipping label:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to generate shipping label' 
+        error: (error as Error).message || 'Failed to generate shipping label' 
       }),
       { 
         status: 500,

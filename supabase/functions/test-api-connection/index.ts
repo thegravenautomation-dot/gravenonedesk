@@ -135,36 +135,37 @@ async function testIndiamartConnection(): Promise<any> {
       response_keys: Object.keys(data)
     });
     
+    // IndiaMART returns HTTP 200 even for errors, check the CODE field in response body
+    if (data.CODE === 401) {
+      return { 
+        success: false, 
+        message: `IndiaMART API key error: ${data.MESSAGE || 'API key is invalid or expired. Please check your registered email for a new key.'}` 
+      };
+    }
+    
+    if (data.CODE === 403) {
+      return { 
+        success: false, 
+        message: `IndiaMART API access forbidden: ${data.MESSAGE || 'Please check if your API key has proper permissions.'}` 
+      };
+    }
+    
     if (response.status === 429) {
       return { 
         success: false, 
-        message: 'IndiaMART API rate limit exceeded. Please wait 10-15 minutes before testing again. Consider reducing sync frequency.' 
-      };
-    }
-    
-    if (response.status === 401) {
-      return { 
-        success: false, 
-        message: 'IndiaMART API key is invalid or unauthorized. Please verify your API key is correct.' 
-      };
-    }
-    
-    if (response.status === 403) {
-      return { 
-        success: false, 
-        message: 'IndiaMART API access forbidden. Please check if your API key has proper permissions.' 
+        message: 'IndiaMART API rate limit exceeded. Please wait 10-15 minutes before testing again.' 
       };
     }
     
     if (!response.ok) {
       return { 
         success: false, 
-        message: `IndiaMART API error: ${response.status} - ${data.MESSAGE || response.statusText}` 
+        message: `IndiaMART API HTTP error: ${response.status} - ${data.MESSAGE || response.statusText}` 
       };
     }
     
-    // Check for successful response
-    if (data.STATUS === 'SUCCESS' || data.CODE === 200 || response.ok) {
+    // Check for successful response - IndiaMART uses STATUS and CODE fields
+    if (data.STATUS === 'SUCCESS' && data.CODE === 200) {
       return { 
         success: true, 
         message: `IndiaMART connection successful! Status: ${data.STATUS}, Code: ${data.CODE}, Records: ${data.TOTAL_RECORDS || 0}`,
@@ -178,7 +179,7 @@ async function testIndiamartConnection(): Promise<any> {
     } else {
       return { 
         success: false, 
-        message: `IndiaMART API returned unexpected response: ${data.MESSAGE || 'Unknown error'}` 
+        message: `IndiaMART API error: ${data.MESSAGE || `Unexpected response - Status: ${data.STATUS}, Code: ${data.CODE}`}` 
       };
     }
     
