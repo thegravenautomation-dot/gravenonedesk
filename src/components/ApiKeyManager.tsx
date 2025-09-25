@@ -159,6 +159,44 @@ export function ApiKeyManager() {
     }));
   };
 
+  const updateIndiaMArtKey = async () => {
+    const newKey = "mRy2GrFt4n/GTPet4XOC7liGoFDDnTBkXQ==";
+    setApiKeys(prev => ({
+      ...prev,
+      INDIAMART_API_KEY: newKey
+    }));
+    
+    // Auto-save the new key
+    try {
+      setLoading(true);
+      const { error } = await supabase.functions.invoke('update-api-key', {
+        body: {
+          keyName: 'INDIAMART_API_KEY',
+          keyValue: newKey
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "IndiaMART API key updated successfully",
+      });
+
+      // Test the connection immediately
+      await testConnection('INDIAMART_API_KEY');
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update API key",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleKeyVisibility = (keyName: string) => {
     setShowKeys(prev => ({
       ...prev,
@@ -372,6 +410,17 @@ export function ApiKeyManager() {
                             size="sm"
                           >
                             Sync Now
+                          </Button>
+                        )}
+                        
+                        {keyDef.name === 'INDIAMART_API_KEY' && (
+                          <Button
+                            variant="default"
+                            onClick={() => updateIndiaMArtKey()}
+                            disabled={loading}
+                            size="sm"
+                          >
+                            Update New Key
                           </Button>
                         )}
                       </div>
