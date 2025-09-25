@@ -41,9 +41,10 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
   const [customerData, setCustomerData] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [purchaseOrderFile, setPurchaseOrderFile] = useState<File | null>(null);
+  const [paymentReceiptFile, setPaymentReceiptFile] = useState<File | null>(null);
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<{purchase_order_path?: string, payment_receipt_path?: string}>({});
   
   const [orderData, setOrderData] = useState({
     order_no: "",
@@ -262,9 +263,16 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
       setLoading(true);
       const { subtotal, totalGst, total } = calculateTotals();
 
-      let pdfPath = null;
-      if (pdfFile) {
-        pdfPath = await uploadFile(pdfFile, 'orders');
+      // Upload attachments
+      let purchaseOrderPath = null;
+      let paymentReceiptPath = null;
+      
+      if (purchaseOrderFile) {
+        purchaseOrderPath = await uploadFile(purchaseOrderFile, 'purchase-orders');
+      }
+      
+      if (paymentReceiptFile) {
+        paymentReceiptPath = await uploadFile(paymentReceiptFile, 'payment-receipts');
       }
 
       // Create order
@@ -281,7 +289,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
           tax_amount: totalGst,
           total_amount: total,
           status: 'pending',
-          po_pdf_path: pdfPath
+          po_pdf_path: purchaseOrderPath
         })
         .select()
         .single();
@@ -311,9 +319,20 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
 
       setSavedOrderId(order.id);
       
+      // Store attachment paths
+      setAttachments({
+        purchase_order_path: purchaseOrderPath,
+        payment_receipt_path: paymentReceiptPath
+      });
+      
+      // Auto-record payment if receipt was uploaded
+      if (paymentReceiptFile && paymentData.amount > 0) {
+        await recordPaymentWithReceipt(order.id, paymentReceiptPath);
+      }
+      
       toast({
         title: "Success",
-        description: "Order created successfully",
+        description: "Order created successfully with attachments",
       });
 
       if (onSuccess) {
@@ -328,6 +347,32 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const recordPaymentWithReceipt = async (orderId: string, receiptPath: string | null) => {
+    try {
+      if (!paymentData.amount || !paymentData.method) return;
+
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          order_id: orderId,
+          customer_id: customerId,
+          branch_id: profile?.branch_id,
+          amount: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          method: paymentData.method,
+          payment_mode: paymentData.method,
+          reference: paymentData.reference || null,
+          receipt_path: receiptPath,
+          note: paymentData.note || null,
+          created_by: profile?.id
+        });
+
+      if (paymentError) throw paymentError;
+    } catch (error) {
+      console.error('Error recording payment:', error);
     }
   };
 
@@ -353,10 +398,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
 
       setLoading(true);
 
-      let receiptPath = null;
-      if (receiptFile) {
-        receiptPath = await uploadFile(receiptFile, 'receipts');
-      }
+      // Receipt upload is now handled in the order creation process
 
       // Save payment to database
       const { error: paymentError } = await supabase
@@ -371,7 +413,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
           payment_mode: paymentData.method,
           reference: paymentData.reference || null,
           transaction_id: paymentData.reference || null,
-          receipt_path: receiptPath,
+          // Receipt path is now handled in enhanced order manager
           note: paymentData.note || null,
           created_by: profile?.id
         });
@@ -391,7 +433,6 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
         reference: "",
         note: ""
       });
-      setReceiptFile(null);
     } catch (error) {
       console.error('Error recording payment:', error);
       toast({
@@ -444,17 +485,98 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="pdf_upload">Order PDF Attachment</Label>
-          <Input
-            id="pdf_upload"
-            type="file"
-            accept=".pdf"
-            onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-          />
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Order Attachments
+          </CardTitle>
+          <CardDescription>
+            Upload relevant documents for this order
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="purchase_order_upload" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Purchase Order (Optional)
+              </Label>
+              <Input
+                id="purchase_order_upload"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setPurchaseOrderFile(e.target.files?.[0] || null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload customer's purchase order document
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="payment_receipt_upload" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Payment Receipt (Optional)
+              </Label>
+              <Input
+                id="payment_receipt_upload"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setPaymentReceiptFile(e.target.files?.[0] || null)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload payment receipt or proof
+              </p>
+            </div>
+          </div>
+          
+          {paymentReceiptFile && (
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <h4 className="font-medium mb-2">Payment Details (for receipt)</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="payment_amount">Amount</Label>
+                  <Input
+                    id="payment_amount"
+                    type="number"
+                    value={paymentData.amount}
+                    onChange={(e) => setPaymentData({...paymentData, amount: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="payment_method">Payment Method</Label>
+                  <Select value={paymentData.method} onValueChange={(value) => setPaymentData({...paymentData, method: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="payment_reference">Reference</Label>
+                  <Input
+                    id="payment_reference"
+                    value={paymentData.reference}
+                    onChange={(e) => setPaymentData({...paymentData, reference: e.target.value})}
+                    placeholder="Reference number"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -688,7 +810,7 @@ export function OrderManager({ customerId, quotationId, onSuccess }: OrderManage
                     id="receipt_upload"
                     type="file"
                     accept="image/*,.pdf"
-                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                    onChange={(e) => setPaymentReceiptFile(e.target.files?.[0] || null)}
                   />
                 </div>
                 <div>
