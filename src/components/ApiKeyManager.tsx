@@ -176,7 +176,7 @@ export function ApiKeyManager() {
 
       if (error) throw error;
 
-      let displayMessage = data?.success ? data.message : `Connection failed: ${data?.error || 'Unknown error'}`;
+      let displayMessage = data?.success ? data.message : `Connection failed: ${data?.message || data?.error || 'Unknown error'}`;
       
       // Provide user-friendly messages for common errors
       if (!data?.success && keyName === 'INDIAMART_API_KEY') {
