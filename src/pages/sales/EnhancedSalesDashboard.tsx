@@ -10,11 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Filter, FileText, Users, DollarSign, TrendingUp } from "lucide-react";
+import { Plus, Search, Filter, FileText, Users, DollarSign, TrendingUp, Package, Wifi } from "lucide-react";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { QuotationEditDialog } from "@/components/QuotationEditDialog";
 import { InvoiceEditDialog } from "@/components/InvoiceEditDialog";
+import { OrderEditDialog } from "@/components/OrderEditDialog";
 import { EditableQuotationView } from "@/components/EditableQuotationView";
 import { checkPermissions, getActionButtons } from "@/lib/permissions";
 import { logDelete } from "@/lib/auditLogger";
@@ -27,15 +28,18 @@ export default function EnhancedSalesDashboard() {
   // Data states
   const [quotations, setQuotations] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
   
   // Dialog states
   const [quotationEditDialog, setQuotationEditDialog] = useState({ open: false, id: null });
   const [invoiceEditDialog, setInvoiceEditDialog] = useState({ open: false, id: null });
+  const [orderEditDialog, setOrderEditDialog] = useState({ open: false, id: null });
   const [quotationViewDialog, setQuotationViewDialog] = useState({ open: false, id: null });
   const [deleteDialog, setDeleteDialog] = useState({ 
     open: false, 
-    type: null as 'quotation' | 'invoice' | 'customer' | null, 
+    type: null as 'quotation' | 'invoice' | 'order' | 'customer' | null, 
     id: null as string | null, 
     name: ""
   });
@@ -48,8 +52,81 @@ export default function EnhancedSalesDashboard() {
   useEffect(() => {
     if (profile?.branch_id) {
       fetchAllData();
+      setupRealTimeSubscriptions();
     }
+    
+    return () => {
+      // Cleanup subscriptions on unmount
+      supabase.removeAllChannels();
+    };
   }, [profile?.branch_id]);
+
+  const setupRealTimeSubscriptions = () => {
+    if (!profile?.branch_id) return;
+
+    const quotationsChannel = supabase
+      .channel('quotations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quotations',
+          filter: `branch_id=eq.${profile.branch_id}`,
+        },
+        (payload) => {
+          console.log('Quotations real-time update:', payload);
+          fetchQuotations();
+          toast({
+            title: "Real-time Update",
+            description: "Quotations data has been updated",
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+          filter: `branch_id=eq.${profile.branch_id}`,
+        },
+        (payload) => {
+          console.log('Invoices real-time update:', payload);
+          fetchInvoices();
+          toast({
+            title: "Real-time Update",
+            description: "Invoices data has been updated",
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `branch_id=eq.${profile.branch_id}`,
+        },
+        (payload) => {
+          console.log('Orders real-time update:', payload);
+          fetchOrders();
+          toast({
+            title: "Real-time Update",
+            description: "Orders data has been updated",
+          });
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsRealTimeConnected(true);
+          console.log('Real-time subscriptions active');
+        } else if (status === 'CHANNEL_ERROR') {
+          setIsRealTimeConnected(false);
+          console.error('Real-time subscription error');
+        }
+      });
+  };
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -57,6 +134,7 @@ export default function EnhancedSalesDashboard() {
       await Promise.all([
         fetchQuotations(),
         fetchInvoices(),
+        fetchOrders(),
         fetchCustomers()
       ]);
     } catch (error) {
@@ -102,6 +180,24 @@ export default function EnhancedSalesDashboard() {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          customers (name, company)
+        `)
+        .eq('branch_id', profile?.branch_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
   const fetchCustomers = async () => {
     try {
       const { data, error } = await supabase
@@ -123,7 +219,8 @@ export default function EnhancedSalesDashboard() {
     try {
       let error;
       const tableName = deleteDialog.type === 'customer' ? 'customers' : 
-                       deleteDialog.type === 'quotation' ? 'quotations' : 'invoices';
+                       deleteDialog.type === 'quotation' ? 'quotations' : 
+                       deleteDialog.type === 'order' ? 'orders' : 'invoices';
 
       // Get the record data before deletion for audit logging
       const { data: recordData } = await supabase
@@ -159,6 +256,7 @@ export default function EnhancedSalesDashboard() {
       // Refresh data
       if (deleteDialog.type === 'quotation') fetchQuotations();
       else if (deleteDialog.type === 'invoice') fetchInvoices();
+      else if (deleteDialog.type === 'order') fetchOrders();
       else if (deleteDialog.type === 'customer') fetchCustomers();
 
       setDeleteDialog({ open: false, type: null, id: null, name: "" });
@@ -405,6 +503,116 @@ export default function EnhancedSalesDashboard() {
     );
   };
 
+  const renderOrdersTab = () => {
+    const filteredOrders = orders.filter(o => {
+      const matchesSearch = o.order_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (o.customers?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 w-64"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => setOrderEditDialog({ open: true, id: null })}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Order
+          </Button>
+        </div>
+
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order No</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Delivery Date</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.map((order) => {
+              const actionButtons = getActionButtons(
+                profile?.role as any,
+                'purchase_order',
+                order.status,
+                order.customer_id === profile?.id
+              );
+
+              return (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.order_no}</TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{order.customers?.name}</div>
+                      {order.customers?.company && (
+                        <div className="text-sm text-muted-foreground">{order.customers.company}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(order.status)}>
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>₹{order.total_amount?.toLocaleString()}</TableCell>
+                  <TableCell>
+                    {order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : '-'}
+                  </TableCell>
+                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <ActionButtons
+                      showEdit={actionButtons.showEdit}
+                      showDelete={actionButtons.showDelete}
+                      editDisabled={!actionButtons.showEdit}
+                      deleteDisabled={!actionButtons.showDelete}
+                      editDisabledReason={actionButtons.editDisabledReason}
+                      deleteDisabledReason={actionButtons.deleteDisabledReason}
+                      onEdit={() => setOrderEditDialog({ open: true, id: order.id })}
+                      onDelete={() => setDeleteDialog({
+                        open: true,
+                        type: 'order',
+                        id: order.id,
+                        name: order.order_no
+                      })}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   const renderCustomersTab = () => {
     const filteredCustomers = customers.filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -560,12 +768,17 @@ export default function EnhancedSalesDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="quotations">Quotations</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
           </TabsList>
 
           <TabsContent value="quotations" className="space-y-4">
             {renderQuotationsTab()}
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-4">
+            {renderOrdersTab()}
           </TabsContent>
 
           <TabsContent value="invoices" className="space-y-4">
@@ -596,6 +809,16 @@ export default function EnhancedSalesDashboard() {
         onSuccess={() => {
           fetchInvoices();
           setInvoiceEditDialog({ open: false, id: null });
+        }}
+      />
+
+      <OrderEditDialog
+        open={orderEditDialog.open}
+        onOpenChange={(open) => setOrderEditDialog({ open, id: null })}
+        orderId={orderEditDialog.id}
+        onSuccess={() => {
+          fetchOrders();
+          setOrderEditDialog({ open: false, id: null });
         }}
       />
 
