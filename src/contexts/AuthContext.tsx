@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 
 interface Profile {
@@ -20,17 +20,20 @@ interface Profile {
 
 interface AuthContextType {
   user: User | null
+  session: Session | null
   profile: Profile | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<void>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isActive) return;
       
       console.log('Auth event:', event, session?.user?.email);
+      setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
@@ -53,6 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 100);
       } else {
         setProfile(null);
+        // Clear any cached data on sign out
+        localStorage.removeItem('supabase.auth.token');
       }
       setLoading(false);
     });
@@ -69,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!isActive) return;
 
+        setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
@@ -138,18 +145,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      // Clear local state first
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Clear any local storage items
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('DEMO_MODE');
+      
+      // Sign out from Supabase (this will trigger the auth state change)
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      console.log('User signed out successfully');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+  }
+
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await fetchProfile(user.id);
+    }
   }
 
   return (
     <AuthContext.Provider value={{
       user,
+      session,
       profile,
       loading,
       signIn,
       signUp,
       signOut,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
