@@ -1278,6 +1278,114 @@ export type Database = {
         }
         Relationships: []
       }
+      opportunities: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          lead_id: string | null
+          lost_reason: string | null
+          priority: string | null
+          probability: number | null
+          source: string | null
+          stage_id: string
+          status: string | null
+          title: string
+          updated_at: string
+          value: number | null
+          won_reason: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          lost_reason?: string | null
+          priority?: string | null
+          probability?: number | null
+          source?: string | null
+          stage_id: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          value?: number | null
+          won_reason?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          lost_reason?: string | null
+          priority?: string | null
+          probability?: number | null
+          source?: string | null
+          stage_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          value?: number | null
+          won_reason?: string | null
+        }
+        Relationships: []
+      }
+      opportunity_activities: {
+        Row: {
+          activity_type: string
+          branch_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          opportunity_id: string
+          title: string
+        }
+        Insert: {
+          activity_type: string
+          branch_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          opportunity_id: string
+          title: string
+        }
+        Update: {
+          activity_type?: string
+          branch_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          opportunity_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -1521,6 +1629,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pipeline_stages: {
+        Row: {
+          branch_id: string
+          color: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          order_index: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
