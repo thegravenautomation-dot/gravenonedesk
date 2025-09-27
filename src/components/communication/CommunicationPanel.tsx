@@ -61,9 +61,40 @@ export function CommunicationPanel({ entityType, entityId, contactEmail, contact
   useEffect(() => {
     if (entityId) {
       fetchCommunications()
+      setupRealtimeSubscription()
     }
     fetchTemplates()
   }, [entityId])
+
+  const setupRealtimeSubscription = () => {
+    if (!profile?.branch_id || !entityId) return
+
+    const channel = supabase
+      .channel(`communication-${entityType}-${entityId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'communications',
+        filter: `branch_id=eq.${profile.branch_id}`
+      }, (payload) => {
+        const newComm = payload.new as Communication;
+        if (newComm.related_entity_id === entityId && newComm.related_entity_type === entityType) {
+          setCommunications(prev => [newComm, ...prev]);
+          
+          // Show real-time notification
+          if (newComm.status === 'sent') {
+            toast.success(`${newComm.contact_type} message sent successfully`);
+          } else if (newComm.status === 'failed') {
+            toast.error(`${newComm.contact_type} message failed to send`);
+          }
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }
 
   const fetchCommunications = async () => {
     if (!profile?.branch_id || !entityId) return

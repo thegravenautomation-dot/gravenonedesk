@@ -8,7 +8,8 @@ import {
   UserCheck,
   BarChart3,
   Target,
-  User
+  User,
+  MessageSquare
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,12 @@ const navigationItems = [
     href: "/hr",
     icon: UserCheck,
     role: ["admin", "hr", "manager"]
+  },
+  {
+    title: "Communication",
+    href: "/communication",
+    icon: MessageSquare,
+    role: ["admin", "manager", "executive", "sales_manager"]
   },
   {
     title: "Analytics",

@@ -25,6 +25,7 @@ import SecurityDashboard from "@/pages/SecurityDashboard";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import VendorRegistration from "@/pages/vendor/VendorRegistration";
 import VendorPortal from "@/pages/vendor/VendorPortal";
+import { CommunicationDashboard } from "@/pages/communication/CommunicationDashboard";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -187,6 +188,17 @@ function App() {
                     <ProtectedRoute>
                       <RoleRoute allowedRoles={['admin', 'manager', 'dispatch']}>
                         <DispatchDashboard />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/communication" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin', 'manager', 'executive', 'sales_manager']}>
+                        <CommunicationDashboard />
                       </RoleRoute>
                     </ProtectedRoute>
                   } 
