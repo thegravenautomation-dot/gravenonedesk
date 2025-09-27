@@ -349,6 +349,111 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_analytics: {
+        Row: {
+          avg_order_value: number | null
+          branch_id: string
+          churn_risk: string | null
+          created_at: string
+          customer_id: string
+          days_since_last_order: number | null
+          engagement_score: number | null
+          first_order_date: string | null
+          id: string
+          last_calculated_at: string | null
+          last_order_date: string | null
+          lifetime_value: number | null
+          loyalty_tier: string | null
+          order_frequency: number | null
+          predicted_clv: number | null
+          primary_segment_id: string | null
+          segment_ids: string[] | null
+          total_orders: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_order_value?: number | null
+          branch_id: string
+          churn_risk?: string | null
+          created_at?: string
+          customer_id: string
+          days_since_last_order?: number | null
+          engagement_score?: number | null
+          first_order_date?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          last_order_date?: string | null
+          lifetime_value?: number | null
+          loyalty_tier?: string | null
+          order_frequency?: number | null
+          predicted_clv?: number | null
+          primary_segment_id?: string | null
+          segment_ids?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_order_value?: number | null
+          branch_id?: string
+          churn_risk?: string | null
+          created_at?: string
+          customer_id?: string
+          days_since_last_order?: number | null
+          engagement_score?: number | null
+          first_order_date?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          last_order_date?: string | null
+          lifetime_value?: number | null
+          loyalty_tier?: string | null
+          order_frequency?: number | null
+          predicted_clv?: number | null
+          primary_segment_id?: string | null
+          segment_ids?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customer_interactions: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string | null
+          id: string
+          interaction_source: string | null
+          interaction_type: string
+          metadata: Json | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description?: string | null
+          id?: string
+          interaction_source?: string | null
+          interaction_type: string
+          metadata?: Json | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string | null
+          id?: string
+          interaction_source?: string | null
+          interaction_type?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       customer_ledger: {
         Row: {
           balance: number | null
@@ -416,6 +521,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_segments: {
+        Row: {
+          branch_id: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          criteria: Json
+          description: string | null
+          id: string
+          is_automated: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_automated?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json
+          description?: string | null
+          id?: string
+          is_automated?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -2673,6 +2817,10 @@ export type Database = {
       assign_lead_smart_with_log: {
         Args: { p_branch_id: string; p_lead_id: string }
         Returns: string
+      }
+      calculate_customer_analytics: {
+        Args: { p_branch_id: string; p_customer_id: string }
+        Returns: undefined
       }
       can_access_employee_data: {
         Args: { _employee_branch_id: string; _user_id: string }
