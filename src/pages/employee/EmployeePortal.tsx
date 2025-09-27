@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
+import { leaveRequestSchema, type LeaveRequestData } from '@/lib/validations'
 import { 
   User, 
   Calendar, 
@@ -57,10 +58,12 @@ export default function EmployeePortal() {
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [newLeaveOpen, setNewLeaveOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const { profile } = useAuth()
   const { toast } = useToast()
 
-  const [newLeave, setNewLeave] = useState({
+  const [newLeave, setNewLeave] = useState<LeaveRequestData>({
     leave_type: '',
     start_date: '',
     end_date: '',
@@ -118,6 +121,8 @@ export default function EmployeePortal() {
 
   const handleLeaveRequest = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitting(true)
+    setValidationErrors({})
     
     if (!profile?.id || !profile?.branch_id) {
       toast({
@@ -125,16 +130,20 @@ export default function EmployeePortal() {
         description: 'User profile not found',
         variant: 'destructive',
       })
+      setSubmitting(false)
       return
     }
     
     try {
+      // Validate form data using Zod schema
+      const validatedData = leaveRequestSchema.parse(newLeave)
+      
       const { error } = await supabase.from('leave_requests').insert([
         {
-          leave_type: newLeave.leave_type as any, // Cast to enum type
-          start_date: newLeave.start_date,
-          end_date: newLeave.end_date,
-          reason: newLeave.reason,
+          leave_type: validatedData.leave_type as any, // Cast to enum type
+          start_date: validatedData.start_date,
+          end_date: validatedData.end_date,
+          reason: validatedData.reason,
           employee_id: profile.id,
           branch_id: profile.branch_id,
           status: 'pending',
@@ -158,13 +167,41 @@ export default function EmployeePortal() {
       fetchEmployeeData()
     } catch (error: any) {
       console.error('Leave request error:', error)
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit leave request',
-        variant: 'destructive',
-      })
+      
+      if (error.errors) {
+        // Handle Zod validation errors
+        const errors: Record<string, string> = {}
+        error.errors.forEach((err: any) => {
+          errors[err.path[0]] = err.message
+        })
+        setValidationErrors(errors)
+        
+        toast({
+          title: 'Validation Error',
+          description: 'Please check the form for errors and try again.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to submit leave request',
+          variant: 'destructive',
+        })
+      }
+    } finally {
+      setSubmitting(false)
     }
   }
+
+  const handleLeaveChange = (field: keyof LeaveRequestData, value: string) => {
+    setNewLeave(prev => ({ ...prev, [field]: value }))
+    // Clear field error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const getFieldError = (field: string) => validationErrors[field] || ''
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -252,9 +289,9 @@ export default function EmployeePortal() {
                       </DialogHeader>
                       <form onSubmit={handleLeaveRequest} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="leave_type">Leave Type</Label>
-                          <Select value={newLeave.leave_type} onValueChange={(value) => setNewLeave({ ...newLeave, leave_type: value })}>
-                            <SelectTrigger>
+                          <Label htmlFor="leave_type">Leave Type *</Label>
+                          <Select value={newLeave.leave_type} onValueChange={(value) => handleLeaveChange('leave_type', value)}>
+                            <SelectTrigger className={getFieldError('leave_type') ? 'border-red-500' : ''}>
                               <SelectValue placeholder="Select leave type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -265,40 +302,57 @@ export default function EmployeePortal() {
                               <SelectItem value="paternity">Paternity Leave</SelectItem>
                             </SelectContent>
                           </Select>
+                          {getFieldError('leave_type') && (
+                            <p className="text-sm text-red-600 mt-1">{getFieldError('leave_type')}</p>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="start_date">Start Date</Label>
+                            <Label htmlFor="start_date">Start Date *</Label>
                             <Input
                               id="start_date"
                               type="date"
                               value={newLeave.start_date}
-                              onChange={(e) => setNewLeave({ ...newLeave, start_date: e.target.value })}
+                              onChange={(e) => handleLeaveChange('start_date', e.target.value)}
+                              className={getFieldError('start_date') ? 'border-red-500' : ''}
                               required
                             />
+                            {getFieldError('start_date') && (
+                              <p className="text-sm text-red-600 mt-1">{getFieldError('start_date')}</p>
+                            )}
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="end_date">End Date</Label>
+                            <Label htmlFor="end_date">End Date *</Label>
                             <Input
                               id="end_date"
                               type="date"
                               value={newLeave.end_date}
-                              onChange={(e) => setNewLeave({ ...newLeave, end_date: e.target.value })}
+                              onChange={(e) => handleLeaveChange('end_date', e.target.value)}
+                              className={getFieldError('end_date') ? 'border-red-500' : ''}
                               required
                             />
+                            {getFieldError('end_date') && (
+                              <p className="text-sm text-red-600 mt-1">{getFieldError('end_date')}</p>
+                            )}
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="reason">Reason</Label>
+                          <Label htmlFor="reason">Reason *</Label>
                           <Textarea
                             id="reason"
                             value={newLeave.reason}
-                            onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
-                            placeholder="Reason for leave..."
+                            onChange={(e) => handleLeaveChange('reason', e.target.value)}
+                            className={getFieldError('reason') ? 'border-red-500' : ''}
+                            placeholder="Reason for leave (minimum 5 characters)..."
                             required
                           />
+                          {getFieldError('reason') && (
+                            <p className="text-sm text-red-600 mt-1">{getFieldError('reason')}</p>
+                          )}
                         </div>
-                        <Button type="submit" className="w-full">Submit Leave Request</Button>
+                        <Button type="submit" className="w-full" disabled={submitting}>
+                          {submitting ? 'Submitting...' : 'Submit Leave Request'}
+                        </Button>
                       </form>
                     </DialogContent>
                   </Dialog>

@@ -215,8 +215,12 @@ export default function VendorRegistration() {
                     id="contact_person"
                     value={formData.contact_person}
                     onChange={(e) => handleChange('contact_person', e.target.value)}
+                    className={getFieldError('contact_person') ? 'border-red-500' : ''}
                     required
                   />
+                  {getFieldError('contact_person') && (
+                    <p className="text-sm text-red-600 mt-1">{getFieldError('contact_person')}</p>
+                  )}
                 </div>
               </div>
 
@@ -248,8 +252,12 @@ export default function VendorRegistration() {
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => handleChange('phone', e.target.value)}
+                    className={getFieldError('phone') ? 'border-red-500' : ''}
                     required
                   />
+                  {getFieldError('phone') && (
+                    <p className="text-sm text-red-600 mt-1">{getFieldError('phone')}</p>
+                  )}
                 </div>
               </div>
 
@@ -378,7 +386,7 @@ export default function VendorRegistration() {
               <div className="space-y-2">
                 <Label htmlFor="branch_id">Preferred Branch *</Label>
                 <Select value={formData.branch_id} onValueChange={(value) => handleChange('branch_id', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className={getFieldError('branch_id') ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select branch" />
                   </SelectTrigger>
                   <SelectContent>
@@ -389,6 +397,9 @@ export default function VendorRegistration() {
                     ))}
                   </SelectContent>
                 </Select>
+                {getFieldError('branch_id') && (
+                  <p className="text-sm text-red-600 mt-1">{getFieldError('branch_id')}</p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-4">
