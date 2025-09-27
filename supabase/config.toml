@@ -68,3 +68,6 @@ verify_jwt = true
 
 [functions.ai-assistant]
 verify_jwt = true
+
+[functions.lead-assignment]
+verify_jwt = false

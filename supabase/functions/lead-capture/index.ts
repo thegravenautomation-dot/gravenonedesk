@@ -180,41 +180,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Lead created successfully:', newLead);
 
-    // Apply lead assignment rules
-    const { data: assignmentRules, error: rulesError } = await supabase
-      .from('lead_assignment_rules')
-      .select('*')
-      .eq('branch_id', branchId)
-      .eq('is_active', true)
-      .order('priority', { ascending: true });
-
-    if (!rulesError && assignmentRules && assignmentRules.length > 0) {
-      for (const rule of assignmentRules) {
-        const conditions = rule.conditions;
-        let shouldAssign = true;
-
-        // Check conditions (simple implementation)
-        if (conditions.source && conditions.source !== source) {
-          shouldAssign = false;
+    // Apply enhanced lead assignment using dedicated function
+    try {
+      const assignmentResult = await supabase.functions.invoke('lead-assignment', {
+        body: { 
+          leadId: newLead.id, 
+          branchId: branchId,
+          forceReassign: false
         }
-        if (conditions.value_min && (!newLead.value || newLead.value < conditions.value_min)) {
-          shouldAssign = false;
-        }
-        if (conditions.value_max && (!newLead.value || newLead.value > conditions.value_max)) {
-          shouldAssign = false;
-        }
+      });
 
-        if (shouldAssign) {
-          // Assign the lead
-          await supabase
-            .from('leads')
-            .update({ assigned_to: rule.assigned_to })
-            .eq('id', newLead.id);
-
-          console.log(`Lead assigned to ${rule.assigned_to} based on rule: ${rule.name}`);
-          break;
-        }
+      if (assignmentResult.error) {
+        console.error('Lead assignment error:', assignmentResult.error);
+      } else {
+        console.log('Lead assignment result:', assignmentResult.data);
       }
+    } catch (assignmentError) {
+      console.error('Failed to invoke lead assignment:', assignmentError);
+      // Continue without failing the entire lead capture process
     }
 
     return new Response(
