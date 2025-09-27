@@ -16,6 +16,8 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { QuotationEditDialog } from "@/components/QuotationEditDialog";
 import { InvoiceEditDialog } from "@/components/InvoiceEditDialog";
 import { OrderEditDialog } from "@/components/OrderEditDialog";
+import { OrderManager } from "@/components/OrderManager";
+import { PaymentManager } from "@/components/PaymentManager";
 import { EditableQuotationView } from "@/components/EditableQuotationView";
 import { checkPermissions, getActionButtons } from "@/lib/permissions";
 import { logDelete } from "@/lib/auditLogger";
@@ -769,6 +771,7 @@ export default function EnhancedSalesDashboard() {
           <TabsList>
             <TabsTrigger value="quotations">Quotations</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
           </TabsList>
@@ -779,6 +782,10 @@ export default function EnhancedSalesDashboard() {
 
           <TabsContent value="orders" className="space-y-4">
             {renderOrdersTab()}
+          </TabsContent>
+
+          <TabsContent value="payments" className="space-y-4">
+            <PaymentManager />
           </TabsContent>
 
           <TabsContent value="invoices" className="space-y-4">
