@@ -361,9 +361,11 @@ export type Database = {
           description: string
           id: string
           is_editable: boolean | null
+          payment_id: string | null
           payment_mode: string | null
           reference_id: string | null
           reference_type: string | null
+          running_balance: number | null
           transaction_date: string
           transaction_type: string
         }
@@ -378,9 +380,11 @@ export type Database = {
           description: string
           id?: string
           is_editable?: boolean | null
+          payment_id?: string | null
           payment_mode?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          running_balance?: number | null
           transaction_date?: string
           transaction_type: string
         }
@@ -395,13 +399,23 @@ export type Database = {
           description?: string
           id?: string
           is_editable?: boolean | null
+          payment_id?: string | null
           payment_mode?: string | null
           reference_id?: string | null
           reference_type?: string | null
+          running_balance?: number | null
           transaction_date?: string
           transaction_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_ledger_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {
@@ -1292,13 +1306,16 @@ export type Database = {
           id: string
           order_date: string | null
           order_no: string
+          payment_receipt_attachment: string | null
           po_pdf_path: string | null
+          purchase_order_attachment: string | null
           quotation_id: string | null
           shipment_id: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           subtotal: number | null
           tax_amount: number | null
           total_amount: number | null
+          total_value: number | null
           updated_at: string | null
         }
         Insert: {
@@ -1311,13 +1328,16 @@ export type Database = {
           id?: string
           order_date?: string | null
           order_no: string
+          payment_receipt_attachment?: string | null
           po_pdf_path?: string | null
+          purchase_order_attachment?: string | null
           quotation_id?: string | null
           shipment_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number | null
+          total_value?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -1330,13 +1350,16 @@ export type Database = {
           id?: string
           order_date?: string | null
           order_no?: string
+          payment_receipt_attachment?: string | null
           po_pdf_path?: string | null
+          purchase_order_attachment?: string | null
           quotation_id?: string | null
           shipment_id?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number | null
+          total_value?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1385,8 +1408,10 @@ export type Database = {
           order_id: string
           payment_date: string
           payment_mode: string | null
+          payment_mode_extended: string | null
           receipt_path: string | null
           reference: string | null
+          remarks: string | null
           transaction_id: string | null
           updated_at: string
           verification_date: string | null
@@ -1406,8 +1431,10 @@ export type Database = {
           order_id: string
           payment_date?: string
           payment_mode?: string | null
+          payment_mode_extended?: string | null
           receipt_path?: string | null
           reference?: string | null
+          remarks?: string | null
           transaction_id?: string | null
           updated_at?: string
           verification_date?: string | null
@@ -1427,8 +1454,10 @@ export type Database = {
           order_id?: string
           payment_date?: string
           payment_mode?: string | null
+          payment_mode_extended?: string | null
           receipt_path?: string | null
           reference?: string | null
+          remarks?: string | null
           transaction_id?: string | null
           updated_at?: string
           verification_date?: string | null

@@ -159,6 +159,30 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    const customerName = customers.find(c => c.id === selectedCustomerId)?.name || 'Unknown';
+    const filename = `Customer-Ledger-${customerName.replace(/\s+/g, '-')}`;
+    const success = await exportToPDF(reportRef.current, { filename });
+    if (success) {
+      toast({ title: "Success", description: "Report exported to PDF successfully!" });
+    } else {
+      toast({ title: "Error", description: "Failed to export PDF", variant: "destructive" });
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!selectedCustomerId || !accountSummary) return;
+    const customerData = customers.find(c => c.id === selectedCustomerId);
+    const filename = `Customer-Ledger-${customerData?.name.replace(/\s+/g, '-')}`;
+    const success = exportCustomerLedgerToExcel(customerData, ledgerEntries, accountSummary, { filename });
+    if (success) {
+      toast({ title: "Success", description: "Report exported to Excel successfully!" });
+    } else {
+      toast({ title: "Error", description: "Failed to export Excel", variant: "destructive" });
+    }
+  };
+
   const handleSaveEntry = async () => {
     try {
       if (!entryData.customer_id || !entryData.description) {
