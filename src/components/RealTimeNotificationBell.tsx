@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,9 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { Bell, BellOff, Check, CheckCheck, Trash2, Circle } from "lucide-react";
 import { useRealTimeNotifications } from "@/hooks/useRealTimeNotifications";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export function RealTimeNotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
   const { 
     notifications, 
     unreadCount, 
@@ -18,6 +20,13 @@ export function RealTimeNotificationBell() {
     markAllAsRead, 
     clearNotifications 
   } = useRealTimeNotifications();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Notification Bell - Notifications:', notifications);
+    console.log('Notification Bell - Unread Count:', unreadCount);
+    console.log('Notification Bell - Loading:', loading);
+  }, [notifications, unreadCount, loading]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -33,9 +42,27 @@ export function RealTimeNotificationBell() {
   };
 
   const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
-    if (!isRead) {
-      await markAsRead(notificationId);
+    try {
+      if (!isRead) {
+        await markAsRead(notificationId);
+        toast({
+          title: "Notification marked as read",
+          description: "Notification has been marked as read",
+        });
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleToggle = (open: boolean) => {
+    console.log('Popover toggle:', open);
+    setIsOpen(open);
   };
 
   if (loading) {
@@ -47,10 +74,18 @@ export function RealTimeNotificationBell() {
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleToggle}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          {unreadCount > 0 ? (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="relative"
+          onClick={() => {
+            console.log('Bell clicked, current state:', isOpen);
+            setIsOpen(!isOpen);
+          }}
+        >
+          {notifications.length > 0 ? (
             <Bell className="h-4 w-4" />
           ) : (
             <BellOff className="h-4 w-4" />
