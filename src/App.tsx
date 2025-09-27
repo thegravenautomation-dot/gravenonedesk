@@ -26,6 +26,7 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 import BranchManagement from "@/pages/admin/BranchManagement";
 import VendorRegistration from "@/pages/vendor/VendorRegistration";
 import VendorPortal from "@/pages/vendor/VendorPortal";
+import { SalesPipeline } from "@/pages/sales/SalesPipeline";
 import { CommunicationDashboard } from "@/pages/communication/CommunicationDashboard";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,7 +56,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Role-based Route Component
 function RoleRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
   const { profile, loading } = useAuth();
-
+            <Route 
+              path="/sales/pipeline" element={
+                <ProtectedRoute>
+                  <SalesPipeline />
+                </ProtectedRoute>
+              } 
+            />
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -138,6 +145,16 @@ function App() {
                   } 
                 />
 
+                <Route
+                  path="/sales/pipeline" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin', 'manager', 'executive']}>
+                        <SalesPipeline />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route 
                   path="/accounts" 
                   element={
