@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
 import { supabase } from "@/integrations/supabase/client";
 import { QuotationTemplate } from "./QuotationTemplate";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ActionButtons } from "@/components/common/ActionButtons";
 import { Plus, Trash2, Eye, FileText, ShoppingCart } from "lucide-react";
 
 interface QuotationManagerProps {

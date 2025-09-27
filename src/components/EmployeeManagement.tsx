@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
+import { ActionButtons } from "@/components/common/ActionButtons";
 import { Users, UserPlus, Edit, UserX, Search, Filter, Trash2 } from "lucide-react";
 
 interface Employee {
@@ -43,33 +45,6 @@ export function EmployeeManagement() {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-
-  const [newEmployee, setNewEmployee] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    date_of_birth: "",
-    joining_date: "",
-    pan: "",
-    aadhaar: "",
-    bank_account: "",
-    ifsc_code: "",
-    basic_salary: 0,
-    hra: 0,
-    allowances: 0,
-    department: "",
-    designation: "",
-    reporting_manager: "",
-    branch_id: profile?.branch_id || "",
-    role: "executive" as const,
-    password: ""
-  });
-
-  useEffect(() => {
-    fetchEmployees();
-    fetchBranches();
-  }, [profile?.branch_id]);
 
   const fetchEmployees = async () => {
     try {
@@ -113,6 +88,37 @@ export function EmployeeManagement() {
       setLoading(false);
     }
   };
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: fetchEmployees
+  });
+
+  const [newEmployee, setNewEmployee] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    date_of_birth: "",
+    joining_date: "",
+    pan: "",
+    aadhaar: "",
+    bank_account: "",
+    ifsc_code: "",
+    basic_salary: 0,
+    hra: 0,
+    allowances: 0,
+    department: "",
+    designation: "",
+    reporting_manager: "",
+    branch_id: profile?.branch_id || "",
+    role: "executive" as const,
+    password: ""
+  });
+
+  useEffect(() => {
+    fetchEmployees();
+    fetchBranches();
+  }, [profile?.branch_id]);
 
   const fetchBranches = async () => {
     try {
@@ -264,37 +270,15 @@ export function EmployeeManagement() {
     }
   };
 
-  const handleDeleteEmployee = async (employeeId: string) => {
-    if (!confirm('Are you sure you want to permanently delete this employee? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', employeeId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Employee deleted successfully",
-      });
-
-      fetchEmployees();
-    } catch (error: any) {
-      console.error('Error deleting employee:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete employee",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleAdminDelete = (employee: Employee) => {
+    initiateDelete({
+      table: 'employees',
+      id: employee.id,
+      itemName: employee.full_name,
+      title: "Delete Employee",
+      description: `Are you sure you want to permanently delete employee "${employee.full_name}" (${employee.employee_id})? This will also delete their profile and revoke system access.`,
+      dependentRecords: ['User profile', 'Attendance records', 'Leave requests', 'Employee queries']
+    });
   };
 
   const filteredEmployees = employees.filter(employee => {
@@ -559,35 +543,28 @@ export function EmployeeManagement() {
                   </TableCell>
                   <TableCell>₹{employee.basic_salary?.toLocaleString()}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <ActionButtons
+                      onEdit={() => {
+                        setSelectedEmployee(employee);
+                        setIsEditEmployeeOpen(true);
+                      }}
+                      onDelete={canDelete ? () => handleAdminDelete(employee) : undefined}
+                      showView={false}
+                      showEdit={true}
+                      showDelete={canDelete}
+                      size="sm"
+                      variant="outline"
+                    />
+                    {employee.status === 'active' && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setSelectedEmployee(employee);
-                          setIsEditEmployeeOpen(true);
-                        }}
+                        onClick={() => handleDeactivateEmployee(employee.id)}
+                        className="ml-2"
                       >
-                        <Edit className="h-4 w-4" />
+                        <UserX className="h-4 w-4" />
                       </Button>
-                      {employee.status === 'active' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeactivateEmployee(employee.id)}
-                        >
-                          <UserX className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:border-red-300"
-                        onClick={() => handleDeleteEmployee(employee.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -666,6 +643,7 @@ export function EmployeeManagement() {
           </div>
         </DialogContent>
       </Dialog>
+      <DeleteDialog />
     </div>
   );
 }
