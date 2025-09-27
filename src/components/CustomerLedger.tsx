@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, RotateCcw, FileText, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Edit, RotateCcw, FileText, TrendingUp, TrendingDown, FileBarChart, FileSpreadsheet } from "lucide-react";
+import { CustomerLedgerReport } from "./reports/CustomerLedgerReport";
+import { exportToPDF, exportCustomerLedgerToExcel } from "@/lib/reportExports";
 
 interface CustomerLedgerProps {
   customerId?: string;
@@ -40,6 +42,10 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState(customerId || "");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<LedgerEntry | null>(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [branchData, setBranchData] = useState<any>(null);
+  const [accountSummary, setAccountSummary] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const [entryData, setEntryData] = useState<LedgerEntry>({
     customer_id: customerId || "",
@@ -55,14 +61,43 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
   useEffect(() => {
     if (profile?.branch_id) {
       fetchCustomers();
+      fetchBranchData();
     }
   }, [profile?.branch_id]);
+
+  const fetchBranchData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('id', profile?.branch_id)
+        .single();
+
+      if (error) throw error;
+      setBranchData(data);
+    } catch (error) {
+      console.error('Error fetching branch data:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedCustomerId) {
       fetchLedgerEntries();
+      fetchAccountSummary();
     }
   }, [selectedCustomerId]);
+
+  const fetchAccountSummary = async () => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_customer_account_summary', { p_customer_id: selectedCustomerId });
+
+      if (error) throw error;
+      setAccountSummary(data[0] || { total_orders: 0, total_payments: 0, current_balance: 0, total_due: 0 });
+    } catch (error) {
+      console.error('Error fetching account summary:', error);
+    }
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -473,6 +508,39 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Report Dialog */}
+          <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Customer Ledger Report</DialogTitle>
+                <DialogDescription>
+                  View and export ledger report for {customers.find(c => c.id === selectedCustomerId)?.name}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex gap-2 mb-4">
+                <Button onClick={handleExportPDF} variant="outline">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button onClick={handleExportExcel} variant="outline">
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export Excel
+                </Button>
+              </div>
+
+              {selectedCustomerId && accountSummary && (
+                <CustomerLedgerReport
+                  ref={reportRef}
+                  customerData={customers.find(c => c.id === selectedCustomerId) || { name: 'Unknown' }}
+                  ledgerEntries={ledgerEntries}
+                  branchData={branchData}
+                  accountSummary={accountSummary}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

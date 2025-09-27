@@ -8,10 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, FileText, Upload, Download, Eye, DollarSign, Receipt } from "lucide-react";
+import { Plus, Search, FileText, Upload, Download, Eye, DollarSign, Receipt, FileBarChart, FileSpreadsheet } from "lucide-react";
 import { OrderManager } from "./OrderManager";
 import { PaymentManager } from "./PaymentManager";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { OrderPaymentSummaryReport } from "./reports/OrderPaymentSummaryReport";
+import { exportToPDF, exportOrderPaymentToExcel } from "@/lib/reportExports";
+import { useRef } from "react";
 
 interface OrderWithPayments {
   id: string;
@@ -40,12 +43,33 @@ export function OrdersWithPayments() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportOrderData, setReportOrderData] = useState<any>(null);
+  const [reportPayments, setReportPayments] = useState<any[]>([]);
+  const [branchData, setBranchData] = useState<any>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (profile?.branch_id) {
       fetchOrdersWithPayments();
+      fetchBranchData();
     }
   }, [profile?.branch_id]);
+
+  const fetchBranchData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('id', profile?.branch_id)
+        .single();
+
+      if (error) throw error;
+      setBranchData(data);
+    } catch (error) {
+      console.error('Error fetching branch data:', error);
+    }
+  };
 
   // Real-time subscription for order updates
   useEffect(() => {
@@ -192,6 +216,87 @@ export function OrdersWithPayments() {
       toast({
         title: "Error",
         description: "Failed to download file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateReport = async (orderId: string) => {
+    try {
+      // Fetch order details
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          customers (name, company, email, phone)
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Fetch payments for this order
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('payment_date', { ascending: false });
+
+      if (paymentsError) throw paymentsError;
+
+      setReportOrderData({
+        ...orderData,
+        customer_name: orderData.customers?.name,
+        customer_company: orderData.customers?.company,
+        order_date: orderData.created_at
+      });
+      setReportPayments(paymentsData || []);
+      setIsReportDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    
+    const filename = `Order-Payment-Summary-${reportOrderData?.order_no}`;
+    const success = await exportToPDF(reportRef.current, { filename });
+    
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Report exported to PDF successfully!",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to export PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!reportOrderData || !reportPayments) return;
+
+    const filename = `Order-Payment-Summary-${reportOrderData.order_no}`;
+    const success = exportOrderPaymentToExcel(reportOrderData, reportPayments, { filename });
+    
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Report exported to Excel successfully!",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to export Excel",
         variant: "destructive",
       });
     }
@@ -350,29 +455,37 @@ export function OrdersWithPayments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {roleAccess.canRecordPayments() && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <DollarSign className="h-3 w-3 mr-1" />
-                                Payments
-                              </Button>
-                            </DialogTrigger>
-                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Payment Management - {order.order_no}</DialogTitle>
-                              <DialogDescription>
-                                Record and manage payments for this order
-                              </DialogDescription>
-                            </DialogHeader>
-                            <PaymentManager 
-                              orderId={order.id} 
-                              customerId={order.customer_id}
-                              onSuccess={() => fetchOrdersWithPayments()}
-                            />
-                          </DialogContent>
-                        </Dialog>
-                        )}
+                         {roleAccess.canRecordPayments() && (
+                           <Dialog>
+                             <DialogTrigger asChild>
+                               <Button variant="outline" size="sm">
+                                 <DollarSign className="h-3 w-3 mr-1" />
+                                 Payments
+                               </Button>
+                             </DialogTrigger>
+                           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                             <DialogHeader>
+                               <DialogTitle>Payment Management - {order.order_no}</DialogTitle>
+                               <DialogDescription>
+                                 Record and manage payments for this order
+                               </DialogDescription>
+                             </DialogHeader>
+                             <PaymentManager 
+                               orderId={order.id} 
+                               customerId={order.customer_id}
+                               onSuccess={() => fetchOrdersWithPayments()}
+                             />
+                           </DialogContent>
+                         </Dialog>
+                         )}
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleGenerateReport(order.id)}
+                         >
+                           <FileBarChart className="h-3 w-3 mr-1" />
+                           Report
+                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -389,6 +502,40 @@ export function OrdersWithPayments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Report Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Payment Summary Report</DialogTitle>
+            <DialogDescription>
+              View and export payment summary for order {reportOrderData?.order_no}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-2 mb-4">
+            <Button onClick={handleExportPDF} variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+            <Button onClick={handleExportExcel} variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+          </div>
+
+          {reportOrderData && (
+            <OrderPaymentSummaryReport
+              ref={reportRef}
+              orderData={reportOrderData}
+              payments={reportPayments}
+              branchData={branchData}
+              totalPaid={reportPayments.reduce((sum, p) => sum + p.amount, 0)}
+              balanceDue={reportOrderData.total_amount - reportPayments.reduce((sum, p) => sum + p.amount, 0)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
