@@ -1136,7 +1136,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select state" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any State</SelectItem>
+                                <SelectItem value="all">Any State</SelectItem>
                                 <SelectItem value="Maharashtra">Maharashtra</SelectItem>
                                 <SelectItem value="Gujarat">Gujarat</SelectItem>
                                 <SelectItem value="Karnataka">Karnataka</SelectItem>
@@ -1174,7 +1174,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select country" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Country</SelectItem>
+                                <SelectItem value="all">Any Country</SelectItem>
                                 <SelectItem value="India">India</SelectItem>
                                 <SelectItem value="USA">United States</SelectItem>
                                 <SelectItem value="UK">United Kingdom</SelectItem>
@@ -1212,7 +1212,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select industry" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Industry</SelectItem>
+                                <SelectItem value="all">Any Industry</SelectItem>
                                 <SelectItem value="Manufacturing">Manufacturing</SelectItem>
                                 <SelectItem value="IT & Software">IT & Software</SelectItem>
                                 <SelectItem value="Healthcare">Healthcare</SelectItem>
@@ -1245,7 +1245,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select product category" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Product Category</SelectItem>
+                                <SelectItem value="all">Any Product Category</SelectItem>
                                 <SelectItem value="Industrial Machinery">Industrial Machinery</SelectItem>
                                 <SelectItem value="Raw Materials">Raw Materials</SelectItem>
                                 <SelectItem value="Electronics & Components">Electronics & Components</SelectItem>
@@ -1278,7 +1278,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select value bracket" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Value</SelectItem>
+                                <SelectItem value="all">Any Value</SelectItem>
                                 <SelectItem value="small">Small (&lt; ₹50,000)</SelectItem>
                                 <SelectItem value="medium">Medium (₹50,000 - ₹5,00,000)</SelectItem>
                                 <SelectItem value="large">Large (₹5,00,000 - ₹25,00,000)</SelectItem>
@@ -1300,7 +1300,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select lead age limit" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Age</SelectItem>
+                                <SelectItem value="all">Any Age</SelectItem>
                                 <SelectItem value="1">Hot Leads (&lt; 1 hour)</SelectItem>
                                 <SelectItem value="4">Fresh Leads (&lt; 4 hours)</SelectItem>
                                 <SelectItem value="24">Same Day (&lt; 24 hours)</SelectItem>
@@ -1322,7 +1322,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select customer segment" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Segment</SelectItem>
+                                <SelectItem value="all">Any Segment</SelectItem>
                                 <SelectItem value="startup">Startup (0-10 employees)</SelectItem>
                                 <SelectItem value="smb">SMB (11-100 employees)</SelectItem>
                                 <SelectItem value="mid_market">Mid-Market (101-1000 employees)</SelectItem>
@@ -1346,7 +1346,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select time preference" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Time</SelectItem>
+                                <SelectItem value="all">Any Time</SelectItem>
                                 <SelectItem value="morning">Morning (9 AM - 12 PM)</SelectItem>
                                 <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
                                 <SelectItem value="evening">Evening (5 PM - 8 PM)</SelectItem>
@@ -1369,7 +1369,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select day preference" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Day</SelectItem>
+                                <SelectItem value="all">Any Day</SelectItem>
                                 <SelectItem value="weekdays">Weekdays Only</SelectItem>
                                 <SelectItem value="weekends">Weekends Only</SelectItem>
                                 <SelectItem value="monday">Monday</SelectItem>
@@ -1396,7 +1396,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select channel preference" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Channel</SelectItem>
+                                <SelectItem value="all">Any Channel</SelectItem>
                                 <SelectItem value="phone">Phone Calls</SelectItem>
                                 <SelectItem value="email">Email Only</SelectItem>
                                 <SelectItem value="whatsapp">WhatsApp</SelectItem>
@@ -1420,7 +1420,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select language" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Language</SelectItem>
+                                <SelectItem value="all">Any Language</SelectItem>
                                 <SelectItem value="english">English</SelectItem>
                                 <SelectItem value="hindi">Hindi</SelectItem>
                                 <SelectItem value="marathi">Marathi</SelectItem>
@@ -1447,7 +1447,7 @@ export function LeadManagement() {
                                 <SelectValue placeholder="Select minimum score" />
                               </SelectTrigger>
                               <SelectContent className="bg-background border shadow-lg z-50">
-                                <SelectItem value="">Any Score</SelectItem>
+                                <SelectItem value="all">Any Score</SelectItem>
                                 <SelectItem value="90">Premium (90+ score)</SelectItem>
                                 <SelectItem value="75">High Quality (75+ score)</SelectItem>
                                 <SelectItem value="60">Good Quality (60+ score)</SelectItem>
