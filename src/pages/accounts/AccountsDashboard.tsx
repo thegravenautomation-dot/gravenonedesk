@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { CustomerLedger } from "@/components/CustomerLedger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,7 +26,9 @@ import {
   Printer,
   IndianRupee,
   Calculator,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Users,
+  BookOpen
 } from "lucide-react";
 
 interface Invoice {
@@ -385,9 +389,16 @@ export default function AccountsDashboard() {
   return (
     <DashboardLayout 
       title="Accounts & Finance"
-      subtitle={`GST-Compliant Invoicing (GST: 07AAKCG1025G1ZX)`}
+      subtitle={`GST-Compliant Invoicing & Customer Ledger (GST: 07AAKCG1025G1ZX)`}
     >
-      <div className="space-y-6">
+      <Tabs defaultValue="invoices" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="invoices">Invoices & GST</TabsTrigger>
+          <TabsTrigger value="ledger">Customer Ledger</TabsTrigger>
+          <TabsTrigger value="reports">Financial Reports</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="space-y-6">
         {/* Financial Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <Card>
@@ -681,7 +692,67 @@ export default function AccountsDashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="ledger" className="space-y-6">
+          {/* Customer Ledger Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Customer Account Ledger
+              </CardTitle>
+              <CardDescription>
+                Track customer transactions, payments, and outstanding balances with auto-sync from orders and payments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomerLedger />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          {/* Financial Reports Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={generateGSTReport}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calculator className="h-5 w-5 text-green-600" />
+                  GSTR-1 Report
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Download GST return filing report</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  Revenue Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Monthly revenue trends & insights</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  Customer Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Customer payment history & aging</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 }

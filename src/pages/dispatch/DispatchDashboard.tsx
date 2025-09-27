@@ -11,12 +11,13 @@ import { ShippingLabelGenerator } from "@/components/ShippingLabelGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Package, Search, MoreHorizontal, Plane, Clock, CheckCircle, Eye } from "lucide-react";
+import { Package, Search, MoreHorizontal, Plane, Clock, CheckCircle, Eye, Bell, DollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function DispatchDashboard() {
   const { profile } = useAuth();
   const [shipments, setShipments] = useState<any[]>([]);
+  const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -24,8 +25,41 @@ export default function DispatchDashboard() {
   useEffect(() => {
     if (profile?.branch_id) {
       fetchShipments();
+      fetchPaidOrders();
     }
   }, [profile?.branch_id]);
+
+  const fetchPaidOrders = async () => {
+    try {
+      // First get orders that are confirmed/processing 
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+          id, order_no, total_amount, created_at,
+          customers (name, company, phone, city, address)
+        `)
+        .eq('branch_id', profile?.branch_id)
+        .in('status', ['confirmed', 'processing'])
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      // Check which orders are fully paid
+      const fullyPaidOrders = [];
+      for (const order of orders || []) {
+        const { data: isFullyPaid, error: checkError } = await supabase
+          .rpc('is_order_fully_paid', { p_order_id: order.id });
+        
+        if (!checkError && isFullyPaid) {
+          fullyPaidOrders.push(order);
+        }
+      }
+
+      setPaidOrders(fullyPaidOrders.slice(0, 5));
+    } catch (error: any) {
+      console.error('Error fetching paid orders:', error);
+    }
+  };
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -88,6 +122,40 @@ export default function DispatchDashboard() {
   return (
     <DashboardLayout title="Dispatch Dashboard" subtitle="Manage shipments with AWB tracking">
       <div className="space-y-6">
+        {/* Paid Orders Ready for Dispatch */}
+        {paidOrders.length > 0 && (
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <Bell className="h-5 w-5" />
+                Orders Ready for Dispatch
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {paidOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <div>
+                        <p className="font-medium text-sm">
+                          {order.order_no} - {order.customers?.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ₹{order.total_amount?.toLocaleString()} | {order.customers?.city}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                      Fully Paid
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">

@@ -361,6 +361,7 @@ export type Database = {
           description: string
           id: string
           is_editable: boolean | null
+          payment_mode: string | null
           reference_id: string | null
           reference_type: string | null
           transaction_date: string
@@ -377,6 +378,7 @@ export type Database = {
           description: string
           id?: string
           is_editable?: boolean | null
+          payment_mode?: string | null
           reference_id?: string | null
           reference_type?: string | null
           transaction_date?: string
@@ -393,6 +395,7 @@ export type Database = {
           description?: string
           id?: string
           is_editable?: boolean | null
+          payment_mode?: string | null
           reference_id?: string | null
           reference_type?: string | null
           transaction_date?: string
@@ -2479,6 +2482,15 @@ export type Database = {
         Args: { p_shipment_id: string }
         Returns: string
       }
+      get_customer_account_summary: {
+        Args: { p_customer_id: string }
+        Returns: {
+          current_balance: number
+          total_due: number
+          total_orders: number
+          total_payments: number
+        }[]
+      }
       get_employee_data_secure: {
         Args: { p_employee_id?: string; p_include_sensitive?: boolean }
         Returns: {
@@ -2524,6 +2536,10 @@ export type Database = {
       }
       is_hr_or_admin: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      is_order_fully_paid: {
+        Args: { p_order_id: string }
         Returns: boolean
       }
       log_employee_data_access: {
