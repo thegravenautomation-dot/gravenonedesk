@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Eye, Upload, DollarSign, CreditCard } from "lucide-react";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 
 interface PaymentManagerProps {
   orderId?: string;
@@ -38,6 +39,7 @@ interface PaymentData {
 export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManagerProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const roleAccess = useRoleAccess();
   const [loading, setLoading] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -247,13 +249,14 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
           <h2 className="text-2xl font-bold">Payment Management</h2>
           <p className="text-muted-foreground">Record and track payments received</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Record Payment
-            </Button>
-          </DialogTrigger>
+        {roleAccess.canRecordPayments() && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                Record Payment
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -397,6 +400,7 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
             </div>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card>
@@ -443,13 +447,15 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(payment)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {roleAccess.canRecordPayments() && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(payment)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                         {payment.receipt_path && (
                           <Button
                             variant="outline"

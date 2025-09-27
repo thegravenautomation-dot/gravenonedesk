@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, FileText, Upload, Download, Eye, DollarSign, Receipt } from "lucide-react";
 import { OrderManager } from "./OrderManager";
 import { PaymentManager } from "./PaymentManager";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 
 interface OrderWithPayments {
   id: string;
@@ -32,6 +33,7 @@ interface OrderWithPayments {
 export function OrdersWithPayments() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const roleAccess = useRoleAccess();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<OrderWithPayments[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,6 +45,43 @@ export function OrdersWithPayments() {
     if (profile?.branch_id) {
       fetchOrdersWithPayments();
     }
+  }, [profile?.branch_id]);
+
+  // Real-time subscription for order updates
+  useEffect(() => {
+    if (!profile?.branch_id) return;
+
+    const channel = supabase
+      .channel('orders-payments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `branch_id=eq.${profile.branch_id}`
+        },
+        () => {
+          fetchOrdersWithPayments();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments',
+          filter: `branch_id=eq.${profile.branch_id}`
+        },
+        () => {
+          fetchOrdersWithPayments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile?.branch_id]);
 
   const fetchOrdersWithPayments = async () => {
@@ -189,13 +228,14 @@ export function OrdersWithPayments() {
           <h2 className="text-3xl font-bold">Orders Management</h2>
           <p className="text-muted-foreground">Manage orders with attachments and payments</p>
         </div>
-        <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Order
-            </Button>
-          </DialogTrigger>
+        {roleAccess.canAccessSales() && (
+          <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Order
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Order</DialogTitle>
@@ -209,6 +249,7 @@ export function OrdersWithPayments() {
             }} />
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Card>
@@ -309,13 +350,14 @@ export function OrdersWithPayments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              Payments
-                            </Button>
-                          </DialogTrigger>
+                        {roleAccess.canRecordPayments() && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <DollarSign className="h-3 w-3 mr-1" />
+                                Payments
+                              </Button>
+                            </DialogTrigger>
                           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Payment Management - {order.order_no}</DialogTitle>
@@ -330,6 +372,7 @@ export function OrdersWithPayments() {
                             />
                           </DialogContent>
                         </Dialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

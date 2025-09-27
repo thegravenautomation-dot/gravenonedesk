@@ -13,9 +13,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Package, Search, MoreHorizontal, Plane, Clock, CheckCircle, Eye, Bell, DollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 
 export default function DispatchDashboard() {
   const { profile } = useAuth();
+  const roleAccess = useRoleAccess();
   const [shipments, setShipments] = useState<any[]>([]);
   const [paidOrders, setPaidOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,11 +25,54 @@ export default function DispatchDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    if (profile?.branch_id) {
+    if (profile?.branch_id && roleAccess.canSeeReadyForShipping()) {
       fetchShipments();
       fetchPaidOrders();
     }
-  }, [profile?.branch_id]);
+  }, [profile?.branch_id, roleAccess]);
+
+  // Real-time subscription for order status changes
+  useEffect(() => {
+    if (!profile?.branch_id || !roleAccess.canSeeReadyForShipping()) return;
+
+    const channel = supabase
+      .channel('dispatch-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `branch_id=eq.${profile.branch_id}`
+        },
+        (payload) => {
+          // Refresh paid orders when order status changes to 'paid'
+          if (payload.new.status === 'paid' && payload.old.status !== 'paid') {
+            fetchPaidOrders();
+            toast.success(`Order ${payload.new.order_no} is ready for dispatch!`, {
+              description: 'Order is fully paid and ready for shipping'
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shipments',
+          filter: `branch_id=eq.${profile.branch_id}`
+        },
+        () => {
+          fetchShipments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.branch_id, roleAccess]);
 
   const fetchPaidOrders = async () => {
     try {
@@ -122,8 +167,8 @@ export default function DispatchDashboard() {
   return (
     <DashboardLayout title="Dispatch Dashboard" subtitle="Manage shipments with AWB tracking">
       <div className="space-y-6">
-        {/* Paid Orders Ready for Dispatch */}
-        {paidOrders.length > 0 && (
+        {/* Paid Orders Ready for Dispatch - Only for Dispatch Role */}
+        {roleAccess.canSeeReadyForShipping() && paidOrders.length > 0 && (
           <Card className="border-green-200 bg-green-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-800">

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ProfileView } from "@/components/ProfileView";
 import { useState } from "react";
+import { RealtimeNotificationBell } from "@/components/RealtimeNotificationBell";
 
 interface DashboardHeaderProps {
   title: string;
@@ -77,44 +78,7 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
           </div>
 
           {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
-                <Bell className="h-4 w-4" />
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs"
-                >
-                  3
-                </Badge>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <div className="p-4">
-                <h3 className="font-semibold text-foreground">Notifications</h3>
-                <p className="text-sm text-muted-foreground">You have 3 unread notifications</p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="p-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">New lead from IndiaMART</p>
-                  <p className="text-xs text-muted-foreground">2 minutes ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Payment received - ₹50,000</p>
-                  <p className="text-xs text-muted-foreground">1 hour ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Dispatch completed - Order #12345</p>
-                  <p className="text-xs text-muted-foreground">3 hours ago</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RealtimeNotificationBell />
 
           {/* User Menu */}
           <DropdownMenu>
