@@ -23,6 +23,7 @@ import EmployeePortal from "@/pages/employee/EmployeePortal";
 import AnalyticsDashboard from "@/pages/analytics/AnalyticsDashboard";
 import SecurityDashboard from "@/pages/SecurityDashboard";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import BranchManagement from "@/pages/admin/BranchManagement";
 import VendorRegistration from "@/pages/vendor/VendorRegistration";
 import VendorPortal from "@/pages/vendor/VendorPortal";
 import { CommunicationDashboard } from "@/pages/communication/CommunicationDashboard";
@@ -114,8 +115,19 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
-                
+
                 <Route 
+                  path="/admin/branches" 
+                  element={
+                    <ProtectedRoute>
+                      <RoleRoute allowedRoles={['admin']}>
+                        <BranchManagement />
+                      </RoleRoute>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route
                   path="/sales" 
                   element={
                     <ProtectedRoute>

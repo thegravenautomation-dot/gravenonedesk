@@ -319,7 +319,7 @@ export default function AdminDashboard() {
                 <Users className="h-4 w-4 mr-2" />
                 User Management
               </Button>
-              <Button variant="outline" className="justify-start" onClick={() => alert('Branch Settings - Coming Soon!')}>
+              <Button variant="outline" className="justify-start" onClick={() => navigate('/admin/branches')}>
                 <Building2 className="h-4 w-4 mr-2" />
                 Branch Settings
               </Button>
