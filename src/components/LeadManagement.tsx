@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationPanel } from "@/components/communication/CommunicationPanel";
 import { LeadProfile } from "@/components/LeadProfile";
+import { AssignLeadDialog } from "@/components/AssignLeadDialog";
 import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity, MessageSquare, Eye, Edit, UserCheck } from "lucide-react";
 
 interface Lead {
@@ -31,14 +32,20 @@ interface Lead {
   customer_id?: string;
   lead_source_id?: string;
   external_id?: string;
+  city?: string;
+  state?: string;
   customers?: {
     name: string;
     company?: string;
     email?: string;
     phone?: string;
+    city?: string;
+    state?: string;
   };
   profiles?: {
     full_name: string;
+    role?: string;
+    department?: string;
   };
   lead_sources?: {
     name: string;
@@ -76,12 +83,17 @@ export function LeadManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [assignmentFilter, setAssignmentFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [isManualLeadOpen, setIsManualLeadOpen] = useState(false);
   const [isAssignmentRulesOpen, setIsAssignmentRulesOpen] = useState(false);
   const [isSyncingLeads, setIsSyncingLeads] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isLeadProfileOpen, setIsLeadProfileOpen] = useState(false);
   const [isCommunicationDialogOpen, setIsCommunicationDialogOpen] = useState(false);
+  const [isAssignLeadDialogOpen, setIsAssignLeadDialogOpen] = useState(false);
   
   // Real-time sync configuration
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
@@ -237,6 +249,15 @@ export function LeadManagement() {
           });
         }
         
+        if (payload.eventType === 'UPDATE' && payload.new.assigned_to && !payload.old.assigned_to) {
+          // Lead was just assigned
+          const assignedEmployee = employees.find(emp => emp.id === payload.new.assigned_to);
+          toast({
+            title: "Lead Assigned",
+            description: `Lead "${payload.new.title}" has been assigned to ${assignedEmployee?.full_name || 'someone'}`,
+          });
+        }
+        
         // Refresh leads data
         fetchLeads();
       })
@@ -389,16 +410,23 @@ export function LeadManagement() {
 
   const fetchLeads = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('leads')
         .select(`
           *,
-          customers (name, company, email, phone),
-          profiles (full_name),
+          customers (name, company, email, phone, city, state),
+          profiles (full_name, role, department),
           lead_sources (name, source_type)
         `)
-        .eq('branch_id', profile?.branch_id)
-        .order('created_at', { ascending: false });
+        .eq('branch_id', profile?.branch_id);
+
+      // Filter leads based on user role
+      if (profile?.role && !['admin', 'manager'].includes(profile.role)) {
+        // Non-admin/manager users only see their assigned leads
+        query = query.eq('assigned_to', profile.id);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setLeads(data || []);
@@ -698,13 +726,49 @@ export function LeadManagement() {
   };
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.lead_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (lead.customers?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    const matchesSource = sourceFilter === 'all' || lead.lead_sources?.source_type === sourceFilter;
-    return matchesSearch && matchesStatus && matchesSource;
+    const matchesSearch = !searchTerm || 
+      lead.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.lead_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.customers?.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
+    const matchesSource = sourceFilter === "all" || lead.source === sourceFilter || lead.lead_sources?.source_type === sourceFilter;
+    
+    const matchesAssignment = assignmentFilter === "all" || 
+      (assignmentFilter === "assigned" && lead.assigned_to) ||
+      (assignmentFilter === "unassigned" && !lead.assigned_to) ||
+      (assignmentFilter === "mine" && lead.assigned_to === profile?.id);
+    
+    const matchesDepartment = departmentFilter === "all" || lead.profiles?.department === departmentFilter;
+    const matchesRole = roleFilter === "all" || lead.profiles?.role === roleFilter;
+    
+    const matchesLocation =  locationFilter === "all" || 
+      lead.customers?.city?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+      lead.customers?.state?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+      lead.city?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+      lead.state?.toLowerCase().includes(locationFilter.toLowerCase());
+    
+    return matchesSearch && matchesStatus && matchesSource && matchesAssignment && matchesDepartment && matchesRole && matchesLocation;
   });
+
+  const getUniqueValues = (array: any[], key: string) => {
+    return [...new Set(array.map(item => item[key]).filter(Boolean))];
+  };
+
+  const getUniqueDepartments = () => {
+    return [...new Set(employees.map(emp => emp.department).filter(Boolean))];
+  };
+
+  const getUniqueRoles = () => {
+    return [...new Set(employees.map(emp => emp.role).filter(Boolean))];
+  };
+
+  const getUniqueLocations = () => {
+    const cities = leads.flatMap(lead => [lead.customers?.city, lead.city]).filter(Boolean);
+    const states = leads.flatMap(lead => [lead.customers?.state, lead.state]).filter(Boolean);
+    return [...new Set([...cities, ...states])];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1185,13 +1249,13 @@ export function LeadManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Target className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Leads</p>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Total Leads</p>
                 <p className="text-2xl font-bold">{leads.length}</p>
               </div>
             </div>
@@ -1199,11 +1263,35 @@ export function LeadManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <User className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Qualified</p>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">New Leads</p>
+                <p className="text-2xl font-bold">{leads.filter(l => l.status === 'new').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Assigned</p>
+                <p className="text-2xl font-bold">{leads.filter(l => l.assigned_to).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-yellow-600" />
+              <div>
+                <p className="text-sm font-medium">Qualified</p>
                 <p className="text-2xl font-bold">{leads.filter(l => l.status === 'qualified').length}</p>
               </div>
             </div>
@@ -1211,28 +1299,12 @@ export function LeadManagement() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pipeline Value</p>
-                <p className="text-2xl font-bold">
-                  ₹{leads.reduce((sum, lead) => sum + (lead.value || 0), 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">This Month</p>
-                <p className="text-2xl font-bold">
-                  {leads.filter(l => new Date(l.created_at).getMonth() === new Date().getMonth()).length}
-                </p>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium">Won</p>
+                <p className="text-2xl font-bold">{leads.filter(l => l.status === 'won').length}</p>
               </div>
             </div>
           </CardContent>
@@ -1242,38 +1314,73 @@ export function LeadManagement() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search leads..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <Input
+              placeholder="Search leads..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="col-span-2"
+            />
+            
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by status" />
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="new">New</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
                 <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="proposal">Proposal</SelectItem>
-                <SelectItem value="won">Won</SelectItem>
                 <SelectItem value="lost">Lost</SelectItem>
+                <SelectItem value="won">Won</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by source" />
+
+            <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Assignment" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="indiamart">IndiaMART</SelectItem>
-                <SelectItem value="tradeindia">TradeIndia</SelectItem>
-                <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                <SelectItem value="website">Website</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="all">All Leads</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                <SelectItem value="mine">My Leads</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {getUniqueDepartments().map(dept => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {getUniqueRoles().map(role => (
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {getUniqueLocations().map(location => (
+                  <SelectItem key={location} value={location}>{location}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -1296,6 +1403,8 @@ export function LeadManagement() {
                 <TableHead>Status</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Assigned To</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Location</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -1347,7 +1456,25 @@ export function LeadManagement() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {lead.profiles?.full_name || 'Unassigned'}
+                    {lead.assigned_to ? (
+                      <div className="flex flex-col">
+                        <span className="font-medium">{lead.profiles?.full_name || 'Unknown'}</span>
+                        <span className="text-xs text-muted-foreground">{lead.profiles?.role}</span>
+                      </div>
+                    ) : 'Unassigned'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {lead.profiles?.department || 'N/A'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {lead.customers?.city && lead.customers?.state ? 
+                        `${lead.customers.city}, ${lead.customers.state}` : 
+                        lead.customers?.city || lead.customers?.state || 'N/A'
+                      }
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
@@ -1375,6 +1502,18 @@ export function LeadManagement() {
                       >
                         <MessageSquare className="h-4 w-4" />
                       </Button>
+                      {(profile?.role === 'admin' || profile?.role === 'manager') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setIsAssignLeadDialogOpen(true);
+                          }}
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1421,6 +1560,16 @@ export function LeadManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AssignLeadDialog
+        lead={selectedLead}
+        employees={employees}
+        isOpen={isAssignLeadDialogOpen}
+        onClose={() => setIsAssignLeadDialogOpen(false)}
+        onLeadAssigned={() => {
+          fetchLeads();
+        }}
+      />
     </div>
   );
 }
