@@ -896,6 +896,42 @@ export type Database = {
           },
         ]
       }
+      lead_assignment_log: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string
+          branch_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          manual_override: boolean
+          rule_used: string | null
+          timestamp: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          manual_override?: boolean
+          rule_used?: string | null
+          timestamp?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          manual_override?: boolean
+          rule_used?: string | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       lead_assignment_rules: {
         Row: {
           assigned_to: string
