@@ -27,6 +27,21 @@ template_name = "magic_link"
 enable_signup = false
 enable_confirmations = false
 
+[functions.enhanced-lead-assignment]
+verify_jwt = false
+
+[functions.generate-shipping-label]
+verify_jwt = true
+
+[functions.create-vendor-user]
+verify_jwt = false
+
+[functions.dispatch-notification]
+verify_jwt = false
+
+[functions.customer-ledger-api]
+verify_jwt = true
+
 [functions.employee-management]
 verify_jwt = true
 
@@ -35,6 +50,12 @@ verify_jwt = false
 
 [functions.initial-setup]
 verify_jwt = false
+
+[functions.orders-api]
+verify_jwt = true
+
+[functions.customers-api]
+verify_jwt = true
 
 [functions.send-communication-email]
 verify_jwt = true
