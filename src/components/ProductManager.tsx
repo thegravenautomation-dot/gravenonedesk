@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Edit, Package, AlertTriangle } from "lucide-react";
+import { ActionButtons } from "@/components/common/ActionButtons";
 
 interface Product {
   id: string;
@@ -54,6 +56,10 @@ export function ProductManager() {
   const [searchTerm, setSearchTerm] = useState("");
   const [newProductOpen, setNewProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: () => fetchProducts()
+  });
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -161,6 +167,17 @@ export function ProductManager() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleDelete = (product: Product) => {
+    initiateDelete({
+      table: 'items',
+      id: product.id,
+      itemName: product.name,
+      title: "Delete Product",
+      description: `Are you sure you want to delete product "${product.name}"? This will also affect any quotations, orders, or purchase orders that reference this product.`,
+      dependentRecords: ['Quotation items', 'Order items', 'Purchase order items', 'RFQ items']
+    });
   };
 
   const handleEditProduct = (product: Product) => {
@@ -458,13 +475,14 @@ export function ProductManager() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <ActionButtons
+                        onEdit={() => handleEditProduct(product)}
+                        onDelete={canDelete ? () => handleDelete(product) : undefined}
+                        showEdit={true}
+                        showView={false}
+                        showDelete={canDelete}
+                        deleteDisabledReason={!canDelete ? "Only administrators can delete products" : undefined}
+                      />
                     </TableCell>
                   </TableRow>
                 );
@@ -473,6 +491,7 @@ export function ProductManager() {
           </TableBody>
         </Table>
       </div>
+      <DeleteDialog />
     </div>
   );
 }

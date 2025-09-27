@@ -10,9 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, Eye, Upload, DollarSign, CreditCard } from "lucide-react";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { ActionButtons } from "@/components/common/ActionButtons";
 
 interface PaymentManagerProps {
   orderId?: string;
@@ -46,6 +48,13 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<PaymentData | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: () => {
+      fetchPayments();
+      if (onSuccess) onSuccess();
+    }
+  });
 
   const [paymentData, setPaymentData] = useState<PaymentData>({
     order_id: orderId || "",
@@ -214,6 +223,17 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
       transaction_id: ""
     });
     setReceiptFile(null);
+  };
+
+  const handleDelete = (payment: any) => {
+    initiateDelete({
+      table: 'payments',
+      id: payment.id,
+      itemName: `Payment of ₹${payment.amount}`,
+      title: "Delete Payment",
+      description: `Are you sure you want to delete this payment of ₹${payment.amount.toLocaleString()}? This will also update the customer ledger.`,
+      dependentRecords: ['Customer ledger entries']
+    });
   };
 
   const handleEdit = (payment: any) => {
@@ -446,32 +466,21 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        {roleAccess.canRecordPayments() && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(payment)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {payment.receipt_path && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Open receipt in new tab
-                              const { data } = supabase.storage
-                                .from('documents')
-                                .getPublicUrl(payment.receipt_path);
-                              window.open(data.publicUrl, '_blank');
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <ActionButtons
+                        onEdit={roleAccess.canRecordPayments() ? () => handleEdit(payment) : undefined}
+                        onView={payment.receipt_path ? () => {
+                          const { data } = supabase.storage
+                            .from('documents')
+                            .getPublicUrl(payment.receipt_path);
+                          window.open(data.publicUrl, '_blank');
+                        } : undefined}
+                        onDelete={canDelete ? () => handleDelete(payment) : undefined}
+                        showEdit={roleAccess.canRecordPayments()}
+                        showView={!!payment.receipt_path}
+                        showDelete={canDelete}
+                        editDisabledReason={!roleAccess.canRecordPayments() ? "Insufficient permissions to edit payments" : undefined}
+                        deleteDisabledReason={!canDelete ? "Only administrators can delete payments" : undefined}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -487,6 +496,7 @@ export function PaymentManager({ orderId, customerId, onSuccess }: PaymentManage
           </div>
         </CardContent>
       </Card>
+      <DeleteDialog />
     </div>
   );
 }

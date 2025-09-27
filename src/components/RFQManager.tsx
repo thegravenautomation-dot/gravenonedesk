@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminDelete } from '@/hooks/useAdminDelete';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Send, Eye } from 'lucide-react';
 import { format } from 'date-fns';
@@ -48,6 +49,12 @@ export default function RFQManager({ open, onOpenChange, rfqId, onSuccess }: RFQ
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [showVendorSelection, setShowVendorSelection] = useState(false);
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: () => {
+      if (onSuccess) onSuccess();
+    }
+  });
 
   const [rfqData, setRfqData] = useState({
     rfq_no: '',

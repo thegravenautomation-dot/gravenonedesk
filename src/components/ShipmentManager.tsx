@@ -10,8 +10,10 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
 import { toast } from "sonner";
 import { Truck, Package, FileText, Download, Eye, Upload, MapPin } from "lucide-react";
+import { ActionButtons } from "@/components/common/ActionButtons";
 
 interface ShipmentManagerProps {
   orderId?: string;
@@ -87,6 +89,10 @@ export function ShipmentManager({ orderId, onShipmentCreated }: ShipmentManagerP
   const [loading, setLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [awbFile, setAwbFile] = useState<File | null>(null);
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: () => fetchShipments()
+  });
   
   const [newShipment, setNewShipment] = useState({
     order_id: orderId || "",
@@ -295,6 +301,17 @@ export function ShipmentManager({ orderId, onShipmentCreated }: ShipmentManagerP
     } catch (error: any) {
       toast.error('Failed to download AWB: ' + error.message);
     }
+  };
+
+  const handleDelete = (shipment: any) => {
+    initiateDelete({
+      table: 'shipments',
+      id: shipment.id,
+      itemName: `Shipment AWB: ${shipment.awb_number || 'Unassigned'}`,
+      title: "Delete Shipment",
+      description: `Are you sure you want to delete this shipment? This action cannot be undone.`,
+      dependentRecords: ['Shipping labels', 'Tracking history']
+    });
   };
 
   return (
@@ -532,6 +549,16 @@ export function ShipmentManager({ orderId, onShipmentCreated }: ShipmentManagerP
                     </Button>
                   )}
 
+                  {canDelete && (
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => handleDelete(shipment)}
+                    >
+                      Delete Shipment
+                    </Button>
+                  )}
+
                   <Select onValueChange={(value) => updateShipmentStatus(shipment.id, value)}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Update Status" />
@@ -551,6 +578,7 @@ export function ShipmentManager({ orderId, onShipmentCreated }: ShipmentManagerP
           ))
         )}
       </div>
+      <DeleteDialog />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminDelete } from "@/hooks/useAdminDelete";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, FileText, Download, DollarSign } from "lucide-react";
@@ -84,6 +85,12 @@ export function PurchaseOrderManager({ open, onOpenChange, sourceOrders = [], on
   const [currency, setCurrency] = useState("INR");
   const [exchangeRate, setExchangeRate] = useState(1.0);
   const [items, setItems] = useState<POItem[]>([]);
+
+  const { canDelete, initiateDelete, DeleteDialog } = useAdminDelete({
+    onSuccess: () => {
+      if (onSuccess) onSuccess();
+    }
+  });
 
   const [poData, setPOData] = useState({
     po_no: "",
