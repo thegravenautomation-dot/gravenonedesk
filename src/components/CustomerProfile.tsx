@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Building2, Mail, Phone, MapPin, Edit, Calendar } from "lucide-react";
+import { User, Building2, Mail, Phone, MapPin, Edit, Calendar, FileText } from "lucide-react";
 import { FollowUpScheduler } from "./FollowUpScheduler";
+import { CustomerLedger } from "./CustomerLedger";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CustomerProfileProps {
   customerId: string;
@@ -414,54 +416,67 @@ export function CustomerProfile({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Name</Label>
-            <p className="font-medium">{customerData.name}</p>
-          </div>
-          <div>
-            <Label>Company</Label>
-            <p className="text-sm">{customerData.company || "N/A"}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Email</Label>
-            <p className="text-sm flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              {customerData.email || "N/A"}
-            </p>
-          </div>
-          <div>
-            <Label>Phone</Label>
-            <p className="text-sm flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              {customerData.phone || "N/A"}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>WhatsApp</Label>
-            <p className="text-sm">{customerData.whatsapp_number || "N/A"}</p>
-          </div>
-          <div>
-            <Label>Designation</Label>
-            <p className="text-sm">{customerData.designation || "N/A"}</p>
-          </div>
-        </div>
-        <div>
-          <Label>GST Number</Label>
-          <p className="text-sm">{customerData.gstin || "N/A"}</p>
-        </div>
-        <div>
-          <Label>Billing Address</Label>
-          <p className="text-sm">{customerData.billing_address || customerData.address || "N/A"}</p>
-        </div>
-        <div>
-          <Label>Shipping Address</Label>
-          <p className="text-sm">{customerData.shipping_address || customerData.address || "N/A"}</p>
-        </div>
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Customer Details</TabsTrigger>
+            <TabsTrigger value="ledger">Account Ledger</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="space-y-4 mt-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Name</Label>
+                <p className="font-medium">{customerData.name}</p>
+              </div>
+              <div>
+                <Label>Company</Label>
+                <p className="text-sm">{customerData.company || "N/A"}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Email</Label>
+                <p className="text-sm flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {customerData.email || "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <p className="text-sm flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  {customerData.phone || "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>WhatsApp</Label>
+                <p className="text-sm">{customerData.whatsapp_number || "N/A"}</p>
+              </div>
+              <div>
+                <Label>Designation</Label>
+                <p className="text-sm">{customerData.designation || "N/A"}</p>
+              </div>
+            </div>
+            <div>
+              <Label>GST Number</Label>
+              <p className="text-sm">{customerData.gstin || "N/A"}</p>
+            </div>
+            <div>
+              <Label>Billing Address</Label>
+              <p className="text-sm">{customerData.billing_address || customerData.address || "N/A"}</p>
+            </div>
+            <div>
+              <Label>Shipping Address</Label>
+              <p className="text-sm">{customerData.shipping_address || customerData.address || "N/A"}</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="ledger" className="mt-6">
+            <CustomerLedger customerId={customerId} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
