@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, FileText, Upload, Download, Eye, DollarSign, Receipt, FileBarChart, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, FileText, Upload, Download, Eye, DollarSign, Receipt, FileBarChart, FileSpreadsheet, Settings } from "lucide-react";
 import { OrderManager } from "./OrderManager";
 import { PaymentManager } from "./PaymentManager";
+import { OrderDetailsModal } from "./OrderDetailsModal";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { OrderPaymentSummaryReport } from "./reports/OrderPaymentSummaryReport";
 import { exportToPDF, exportOrderPaymentToExcel } from "@/lib/reportExports";
@@ -43,6 +44,7 @@ export function OrdersWithPayments() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [reportOrderData, setReportOrderData] = useState<any>(null);
   const [reportPayments, setReportPayments] = useState<any[]>([]);
@@ -455,6 +457,17 @@ export function OrdersWithPayments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => {
+                             setSelectedOrder(order.id);
+                             setIsOrderDetailsOpen(true);
+                           }}
+                         >
+                           <Settings className="h-3 w-3 mr-1" />
+                           Manage
+                         </Button>
                          {roleAccess.canRecordPayments() && (
                            <Dialog>
                              <DialogTrigger asChild>
@@ -502,6 +515,17 @@ export function OrdersWithPayments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal 
+        orderId={selectedOrder}
+        isOpen={isOrderDetailsOpen}
+        onClose={() => {
+          setIsOrderDetailsOpen(false);
+          setSelectedOrder(null);
+          fetchOrdersWithPayments();
+        }}
+      />
 
       {/* Report Dialog */}
       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
