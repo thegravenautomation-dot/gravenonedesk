@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { 
@@ -22,7 +22,6 @@ import {
   FileText, 
   Clock, 
   CreditCard,
-  Download,
   Plus,
   CheckCircle,
   XCircle,
@@ -34,28 +33,30 @@ interface LeaveRequest {
   leave_type: string
   start_date: string
   end_date: string
-  reason: string
+  reason?: string
   status: string
   created_at: string
+  employee_id: string
+  branch_id: string
 }
 
-interface PaySlip {
+interface EmployeeData {
   id: string
-  month: string
-  year: number
-  basic_salary: number
-  allowances: number
-  deductions: number
-  net_salary: number
-  created_at: string
+  employee_id: string
+  full_name: string
+  email?: string
+  phone?: string
+  department?: string
+  designation?: string
+  basic_salary?: number
+  status: string
 }
 
 export default function EmployeePortal() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
-  const [paySlips, setPaySlips] = useState<PaySlip[]>([])
+  const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [newLeaveOpen, setNewLeaveOpen] = useState(false)
-  const [newLoanOpen, setNewLoanOpen] = useState(false)
   const { profile } = useAuth()
   const { toast } = useToast()
 
@@ -66,42 +67,48 @@ export default function EmployeePortal() {
     reason: '',
   })
 
-  const [newLoan, setNewLoan] = useState({
-    amount: '',
-    reason: '',
-    repayment_months: '',
-  })
-
   useEffect(() => {
     fetchEmployeeData()
   }, [])
 
   const fetchEmployeeData = async () => {
+    if (!profile?.id) return
+    
     try {
+      setLoading(true)
+      
       // Fetch leave requests
       const { data: leaves, error: leavesError } = await supabase
         .from('leave_requests')
         .select('*')
-        .eq('employee_id', profile?.id)
+        .eq('employee_id', profile.id)
         .order('created_at', { ascending: false })
 
-      if (leavesError) throw leavesError
+      if (leavesError && leavesError.code !== 'PGRST116') {
+        console.error('Leave requests error:', leavesError)
+        throw new Error('Failed to fetch leave requests')
+      }
+      
       setLeaveRequests(leaves || [])
 
-      // Fetch pay slips
-      const { data: payslips, error: payslipsError } = await supabase
-        .from('pay_slips')
+      // Fetch employee data
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
         .select('*')
-        .eq('employee_id', profile?.id)
-        .order('year', { ascending: false })
-        .order('month', { ascending: false })
+        .eq('profile_id', profile.id)
+        .single()
 
-      if (payslipsError) throw payslipsError
-      setPaySlips(payslips || [])
-    } catch (error) {
+      if (employeeError && employeeError.code !== 'PGRST116') {
+        console.error('Employee data error:', employeeError)
+      } else {
+        setEmployeeData(employee || null)
+      }
+
+    } catch (error: any) {
+      console.error('Fetch error:', error)
       toast({
         title: 'Error',
-        description: 'Failed to fetch employee data',
+        description: error.message || 'Failed to fetch employee data',
         variant: 'destructive',
       })
     } finally {
@@ -112,12 +119,24 @@ export default function EmployeePortal() {
   const handleLeaveRequest = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!profile?.id || !profile?.branch_id) {
+      toast({
+        title: 'Error',
+        description: 'User profile not found',
+        variant: 'destructive',
+      })
+      return
+    }
+    
     try {
       const { error } = await supabase.from('leave_requests').insert([
         {
-          ...newLeave,
-          employee_id: profile?.id,
-          branch_id: profile?.branch_id,
+          leave_type: newLeave.leave_type as any, // Cast to enum type
+          start_date: newLeave.start_date,
+          end_date: newLeave.end_date,
+          reason: newLeave.reason,
+          employee_id: profile.id,
+          branch_id: profile.branch_id,
           status: 'pending',
         },
       ])
@@ -137,46 +156,11 @@ export default function EmployeePortal() {
         reason: '',
       })
       fetchEmployeeData()
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Leave request error:', error)
       toast({
         title: 'Error',
-        description: 'Failed to submit leave request',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  const handleLoanRequest = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    try {
-      const { error } = await supabase.from('loan_requests').insert([
-        {
-          ...newLoan,
-          amount: parseFloat(newLoan.amount),
-          repayment_months: parseInt(newLoan.repayment_months),
-          employee_id: profile?.id,
-          status: 'pending',
-        },
-      ])
-
-      if (error) throw error
-
-      toast({
-        title: 'Success',
-        description: 'Loan request submitted successfully',
-      })
-
-      setNewLoanOpen(false)
-      setNewLoan({
-        amount: '',
-        reason: '',
-        repayment_months: '',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to submit loan request',
+        description: error.message || 'Failed to submit leave request',
         variant: 'destructive',
       })
     }
@@ -191,17 +175,26 @@ export default function EmployeePortal() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
 
-  const totalEarnings = paySlips.reduce((sum, slip) => sum + slip.net_salary, 0)
-  const currentMonthSlip = paySlips[0]
+  const currentSalary = employeeData?.basic_salary || 0
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Employee Portal" subtitle="Loading...">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
-    <DashboardLayout title="Employee Portal" subtitle="Manage your profile, leaves, and payroll">
+    <DashboardLayout title="Employee Portal" subtitle="Manage your profile, leaves, and employee information">
       <div className="space-y-6">
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <DashboardCard
-            title="Total Earnings (YTD)"
-            value={`₹${(totalEarnings / 100000).toFixed(1)}L`}
+            title="Current Salary"
+            value={currentSalary ? `₹${(currentSalary / 1000).toFixed(0)}K` : '₹0'}
             icon={DollarSign}
             variant="green"
           />
@@ -218,19 +211,17 @@ export default function EmployeePortal() {
             variant="orange"
           />
           <DashboardCard
-            title="Last Salary"
-            value={currentMonthSlip ? `₹${(currentMonthSlip.net_salary / 1000).toFixed(0)}K` : '₹0'}
+            title="Employee ID"
+            value={employeeData?.employee_id || profile?.employee_id || 'N/A'}
             icon={CreditCard}
             variant="purple"
           />
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="leaves">Leaves</TabsTrigger>
-            <TabsTrigger value="payslips">Payslips</TabsTrigger>
-            <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="ai-assistant">
               <Bot className="h-4 w-4 mr-1" />
@@ -312,64 +303,9 @@ export default function EmployeePortal() {
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={newLoanOpen} onOpenChange={setNewLoanOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full justify-start" variant="outline">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Request Loan/Advance
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Request Loan/Advance</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleLoanRequest} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="amount">Amount</Label>
-                          <Input
-                            id="amount"
-                            type="number"
-                            value={newLoan.amount}
-                            onChange={(e) => setNewLoan({ ...newLoan, amount: e.target.value })}
-                            placeholder="Enter amount"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="repayment_months">Repayment Period (Months)</Label>
-                          <Select 
-                            value={newLoan.repayment_months} 
-                            onValueChange={(value) => setNewLoan({ ...newLoan, repayment_months: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select repayment period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">1 Month</SelectItem>
-                              <SelectItem value="3">3 Months</SelectItem>
-                              <SelectItem value="6">6 Months</SelectItem>
-                              <SelectItem value="12">12 Months</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="loan_reason">Reason</Label>
-                          <Textarea
-                            id="loan_reason"
-                            value={newLoan.reason}
-                            onChange={(e) => setNewLoan({ ...newLoan, reason: e.target.value })}
-                            placeholder="Reason for loan/advance..."
-                            required
-                          />
-                        </div>
-                        <Button type="submit" className="w-full">Submit Request</Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-
                   <Button className="w-full justify-start" variant="outline">
                     <FileText className="mr-2 h-4 w-4" />
-                    Submit Expense Claim
+                    View Profile Information
                   </Button>
                 </CardContent>
               </Card>
@@ -396,7 +332,7 @@ export default function EmployeePortal() {
                   <div className="flex items-start gap-3">
                     <FileText className="h-4 w-4 text-primary mt-1" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Payslip generated</p>
+                      <p className="text-sm font-medium">Profile updated</p>
                       <p className="text-xs text-muted-foreground">1 month ago</p>
                     </div>
                   </div>
@@ -447,73 +383,16 @@ export default function EmployeePortal() {
                       <TableCell>{new Date(leave.created_at).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
+                  {leaveRequests.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No leave requests found. Click "New Leave Request" to submit your first request.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
-          </TabsContent>
-
-          <TabsContent value="payslips" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Salary Slips</h3>
-            </div>
-
-            <div className="grid gap-4">
-              {paySlips.map((slip) => (
-                <Card key={slip.id}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-lg">
-                          {new Date(slip.year, parseInt(slip.month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </h4>
-                        <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Basic Salary</p>
-                            <p className="font-medium">₹{slip.basic_salary.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Allowances</p>
-                            <p className="font-medium">₹{slip.allowances.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Deductions</p>
-                            <p className="font-medium">₹{slip.deductions.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Net Salary</p>
-                        <p className="text-2xl font-bold text-success">₹{slip.net_salary.toLocaleString()}</p>
-                        <Button size="sm" variant="outline" className="mt-2">
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="loans" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Loan & Advance Requests</h3>
-              <Dialog open={newLoanOpen} onOpenChange={setNewLoanOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Request
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-            </div>
-
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-muted-foreground">No loan requests found. Click "New Request" to submit a loan or advance request.</p>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-4">
@@ -525,33 +404,47 @@ export default function EmployeePortal() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Full Name</Label>
-                    <Input value={profile?.full_name || ''} disabled />
+                    <Input value={employeeData?.full_name || profile?.full_name || ''} disabled />
                   </div>
                   <div>
                     <Label>Email</Label>
-                    <Input value={profile?.email || ''} disabled />
+                    <Input value={employeeData?.email || profile?.email || ''} disabled />
                   </div>
                   <div>
                     <Label>Employee ID</Label>
-                    <Input value={profile?.employee_id || ''} disabled />
+                    <Input value={employeeData?.employee_id || profile?.employee_id || ''} disabled />
                   </div>
                   <div>
                     <Label>Department</Label>
-                    <Input value={profile?.department || ''} disabled />
+                    <Input value={employeeData?.department || profile?.department || ''} disabled />
                   </div>
                   <div>
                     <Label>Designation</Label>
-                    <Input value={profile?.designation || ''} disabled />
+                    <Input value={employeeData?.designation || profile?.designation || ''} disabled />
                   </div>
                   <div>
-                    <Label>Joining Date</Label>
-                    <Input value={profile?.joining_date || ''} disabled />
+                    <Label>Phone</Label>
+                    <Input value={employeeData?.phone || profile?.phone || ''} disabled />
                   </div>
                 </div>
+                {employeeData && (
+                  <div className="pt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Basic Salary</Label>
+                        <Input value={employeeData.basic_salary ? `₹${employeeData.basic_salary.toLocaleString()}` : 'N/A'} disabled />
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <Input value={employeeData.status || 'N/A'} disabled className="capitalize" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="pt-4">
                   <Button variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
-                    Update Profile
+                    Request Profile Update
                   </Button>
                 </div>
               </CardContent>
