@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PurchaseOrderManager } from '@/components/PurchaseOrderManager'
 import { PurchaseOrderTemplate } from '@/components/PurchaseOrderTemplate'
+import { ProductManager } from '@/components/ProductManager'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -297,8 +298,9 @@ export default function ProcurementDashboard() {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="vendors" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="orders">Orders to Process</TabsTrigger>
             <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
             <TabsTrigger 
@@ -468,6 +470,10 @@ export default function ProcurementDashboard() {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-4">
+            <ProductManager />
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
