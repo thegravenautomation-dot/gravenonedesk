@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CommunicationPanel } from "@/components/communication/CommunicationPanel";
 import { LeadProfile } from "@/components/LeadProfile";
 import { AssignLeadDialog } from "@/components/AssignLeadDialog";
+import { EnhancedLeadAssignmentTest } from "@/components/EnhancedLeadAssignmentTest";
 import { Target, Plus, Settings, RefreshCw, ExternalLink, User, Calendar, DollarSign, Zap, Activity, MessageSquare, Eye, Edit, UserCheck } from "lucide-react";
 
 interface Lead {
@@ -134,12 +135,22 @@ export function LeadManagement() {
       source: "any",
       value_min: 0,
       value_max: 0,
+      value_bracket: "",
       region: "",
       city: "",
       state: "",
       country: "",
       industry: "",
-      product_category: ""
+      product_category: "",
+      lead_age_hours: "",
+      time_of_day: "",
+      day_of_week: "",
+      lead_score_min: "",
+      customer_segment: "",
+      communication_channel: "",
+      language_preference: "",
+      territory: "",
+      assignment_method: "direct"
     }
   });
 
@@ -701,12 +712,22 @@ export function LeadManagement() {
           source: "any",
           value_min: 0,
           value_max: 0,
+          value_bracket: "",
           region: "",
           city: "",
           state: "",
           country: "",
           industry: "",
-          product_category: ""
+          product_category: "",
+          lead_age_hours: "",
+          time_of_day: "",
+          day_of_week: "",
+          lead_score_min: "",
+          customer_segment: "",
+          communication_channel: "",
+          language_preference: "",
+          territory: "",
+          assignment_method: "direct"
         }
       });
 
@@ -1244,6 +1265,232 @@ export function LeadManagement() {
                             </Select>
                           </div>
 
+                          <div className="space-y-2">
+                            <Label>Value Bracket</Label>
+                            <Select 
+                              value={newRule.conditions.value_bracket} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, value_bracket: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select value bracket" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Value</SelectItem>
+                                <SelectItem value="small">Small (&lt; ₹50,000)</SelectItem>
+                                <SelectItem value="medium">Medium (₹50,000 - ₹5,00,000)</SelectItem>
+                                <SelectItem value="large">Large (₹5,00,000 - ₹25,00,000)</SelectItem>
+                                <SelectItem value="enterprise">Enterprise (&gt; ₹25,00,000)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Lead Freshness (Max Age in Hours)</Label>
+                            <Select 
+                              value={newRule.conditions.lead_age_hours} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, lead_age_hours: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select lead age limit" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Age</SelectItem>
+                                <SelectItem value="1">Hot Leads (&lt; 1 hour)</SelectItem>
+                                <SelectItem value="4">Fresh Leads (&lt; 4 hours)</SelectItem>
+                                <SelectItem value="24">Same Day (&lt; 24 hours)</SelectItem>
+                                <SelectItem value="72">Recent (&lt; 3 days)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Customer Segment</Label>
+                            <Select 
+                              value={newRule.conditions.customer_segment} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, customer_segment: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select customer segment" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Segment</SelectItem>
+                                <SelectItem value="startup">Startup (0-10 employees)</SelectItem>
+                                <SelectItem value="smb">SMB (11-100 employees)</SelectItem>
+                                <SelectItem value="mid_market">Mid-Market (101-1000 employees)</SelectItem>
+                                <SelectItem value="enterprise">Enterprise (1000+ employees)</SelectItem>
+                                <SelectItem value="government">Government/PSU</SelectItem>
+                                <SelectItem value="individual">Individual Buyer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Time of Day Preference</Label>
+                            <Select 
+                              value={newRule.conditions.time_of_day} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, time_of_day: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select time preference" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Time</SelectItem>
+                                <SelectItem value="morning">Morning (9 AM - 12 PM)</SelectItem>
+                                <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
+                                <SelectItem value="evening">Evening (5 PM - 8 PM)</SelectItem>
+                                <SelectItem value="business_hours">Business Hours Only</SelectItem>
+                                <SelectItem value="after_hours">After Hours</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Day of Week</Label>
+                            <Select 
+                              value={newRule.conditions.day_of_week} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, day_of_week: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select day preference" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Day</SelectItem>
+                                <SelectItem value="weekdays">Weekdays Only</SelectItem>
+                                <SelectItem value="weekends">Weekends Only</SelectItem>
+                                <SelectItem value="monday">Monday</SelectItem>
+                                <SelectItem value="tuesday">Tuesday</SelectItem>
+                                <SelectItem value="wednesday">Wednesday</SelectItem>
+                                <SelectItem value="thursday">Thursday</SelectItem>
+                                <SelectItem value="friday">Friday</SelectItem>
+                                <SelectItem value="saturday">Saturday</SelectItem>
+                                <SelectItem value="sunday">Sunday</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Communication Channel</Label>
+                            <Select 
+                              value={newRule.conditions.communication_channel} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, communication_channel: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select channel preference" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Channel</SelectItem>
+                                <SelectItem value="phone">Phone Calls</SelectItem>
+                                <SelectItem value="email">Email Only</SelectItem>
+                                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                                <SelectItem value="chat">Live Chat</SelectItem>
+                                <SelectItem value="video">Video Call</SelectItem>
+                                <SelectItem value="in_person">In-Person Meeting</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Language Preference</Label>
+                            <Select 
+                              value={newRule.conditions.language_preference} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, language_preference: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select language" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Language</SelectItem>
+                                <SelectItem value="english">English</SelectItem>
+                                <SelectItem value="hindi">Hindi</SelectItem>
+                                <SelectItem value="marathi">Marathi</SelectItem>
+                                <SelectItem value="gujarati">Gujarati</SelectItem>
+                                <SelectItem value="tamil">Tamil</SelectItem>
+                                <SelectItem value="bengali">Bengali</SelectItem>
+                                <SelectItem value="kannada">Kannada</SelectItem>
+                                <SelectItem value="telugu">Telugu</SelectItem>
+                                <SelectItem value="punjabi">Punjabi</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Lead Score (Minimum)</Label>
+                            <Select 
+                              value={newRule.conditions.lead_score_min} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, lead_score_min: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select minimum score" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Score</SelectItem>
+                                <SelectItem value="90">Premium (90+ score)</SelectItem>
+                                <SelectItem value="75">High Quality (75+ score)</SelectItem>
+                                <SelectItem value="60">Good Quality (60+ score)</SelectItem>
+                                <SelectItem value="40">Average (40+ score)</SelectItem>
+                                <SelectItem value="20">Low Priority (20+ score)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Territory Assignment</Label>
+                            <Input
+                              value={newRule.conditions.territory}
+                              onChange={(e) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, territory: e.target.value }
+                              })}
+                              placeholder="e.g., North Zone, West Region, Metro Cities"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Assignment Method</Label>
+                            <Select 
+                              value={newRule.conditions.assignment_method} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, assignment_method: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select assignment method" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="direct">Direct Assignment</SelectItem>
+                                <SelectItem value="round_robin">Round Robin</SelectItem>
+                                <SelectItem value="workload_balanced">Workload Balanced</SelectItem>
+                                <SelectItem value="skill_based">Skill-Based Matching</SelectItem>
+                                <SelectItem value="escalation">Escalation Required</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
                           <div className="col-span-full">
                             <Button onClick={handleAddAssignmentRule} className="w-full">
                               Add Rule
@@ -1259,23 +1506,24 @@ export function LeadManagement() {
                       </CardHeader>
                       <CardContent>
                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Priority</TableHead>
-                              <TableHead>Rule Name</TableHead>
-                              <TableHead>Assigned To</TableHead>
-                              <TableHead>Conditions</TableHead>
-                              <TableHead>Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead>Priority</TableHead>
+                               <TableHead>Rule Name</TableHead>
+                               <TableHead>Assigned To</TableHead>
+                               <TableHead className="min-w-[300px]">Conditions & Criteria</TableHead>
+                               <TableHead>Assignment Method</TableHead>
+                               <TableHead>Status</TableHead>
+                             </TableRow>
+                           </TableHeader>
                           <TableBody>
-                            {assignmentRules.map((rule) => (
-                              <TableRow key={rule.id}>
-                                <TableCell>{rule.priority}</TableCell>
-                                <TableCell>{rule.name}</TableCell>
-                                <TableCell>{rule.profiles?.full_name}</TableCell>
+                             {assignmentRules.map((rule) => (
+                               <TableRow key={rule.id}>
+                                 <TableCell>{rule.priority}</TableCell>
+                                 <TableCell>{rule.name}</TableCell>
+                                 <TableCell>{rule.profiles?.full_name}</TableCell>
                                  <TableCell>
-                                   <div className="text-sm space-y-1">
+                                   <div className="text-sm space-y-1 max-w-xs">
                                      {rule.conditions.source && rule.conditions.source !== "any" && (
                                        <div><span className="font-medium">Source:</span> {rule.conditions.source}</div>
                                      )}
@@ -1284,6 +1532,9 @@ export function LeadManagement() {
                                      )}
                                      {rule.conditions.value_max > 0 && (
                                        <div><span className="font-medium">Max Value:</span> ₹{rule.conditions.value_max}</div>
+                                     )}
+                                     {rule.conditions.value_bracket && (
+                                       <div><span className="font-medium">Value Bracket:</span> {rule.conditions.value_bracket}</div>
                                      )}
                                      {rule.conditions.region && (
                                        <div><span className="font-medium">Region:</span> {rule.conditions.region}</div>
@@ -1303,25 +1554,69 @@ export function LeadManagement() {
                                      {rule.conditions.product_category && (
                                        <div><span className="font-medium">Product Category:</span> {rule.conditions.product_category}</div>
                                      )}
+                                     {rule.conditions.lead_age_hours && (
+                                       <div><span className="font-medium">Max Age:</span> {rule.conditions.lead_age_hours}h</div>
+                                     )}
+                                     {rule.conditions.customer_segment && (
+                                       <div><span className="font-medium">Segment:</span> {rule.conditions.customer_segment}</div>
+                                     )}
+                                     {rule.conditions.time_of_day && (
+                                       <div><span className="font-medium">Time:</span> {rule.conditions.time_of_day}</div>
+                                     )}
+                                     {rule.conditions.day_of_week && (
+                                       <div><span className="font-medium">Day:</span> {rule.conditions.day_of_week}</div>
+                                     )}
+                                     {rule.conditions.communication_channel && (
+                                       <div><span className="font-medium">Channel:</span> {rule.conditions.communication_channel}</div>
+                                     )}
+                                     {rule.conditions.language_preference && (
+                                       <div><span className="font-medium">Language:</span> {rule.conditions.language_preference}</div>
+                                     )}
+                                     {rule.conditions.lead_score_min && (
+                                       <div><span className="font-medium">Min Score:</span> {rule.conditions.lead_score_min}+</div>
+                                     )}
+                                     {rule.conditions.territory && (
+                                       <div><span className="font-medium">Territory:</span> {rule.conditions.territory}</div>
+                                     )}
+                                     {rule.conditions.assignment_method && rule.conditions.assignment_method !== "direct" && (
+                                       <div><span className="font-medium">Method:</span> {rule.conditions.assignment_method}</div>
+                                     )}
                                      {!rule.conditions.source && !rule.conditions.value_min && !rule.conditions.value_max && 
-                                      !rule.conditions.region && !rule.conditions.state && !rule.conditions.country && 
-                                      !rule.conditions.city && !rule.conditions.industry && !rule.conditions.product_category && (
+                                      !rule.conditions.value_bracket && !rule.conditions.region && !rule.conditions.state && 
+                                      !rule.conditions.country && !rule.conditions.city && !rule.conditions.industry && 
+                                      !rule.conditions.product_category && !rule.conditions.lead_age_hours && 
+                                      !rule.conditions.customer_segment && !rule.conditions.time_of_day && 
+                                      !rule.conditions.day_of_week && !rule.conditions.communication_channel && 
+                                      !rule.conditions.language_preference && !rule.conditions.lead_score_min && 
+                                      !rule.conditions.territory && (
                                        <div className="text-gray-500">No specific conditions</div>
                                      )}
                                    </div>
                                  </TableCell>
-                                <TableCell>
-                                  <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                                    {rule.is_active ? 'Active' : 'Inactive'}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                                 <TableCell>
+                                   <Badge variant="outline">
+                                     {rule.conditions.assignment_method === "round_robin" && "Round Robin"}
+                                     {rule.conditions.assignment_method === "workload_balanced" && "Workload Balanced"}
+                                     {rule.conditions.assignment_method === "skill_based" && "Skill-Based"}
+                                     {rule.conditions.assignment_method === "escalation" && "Escalation"}
+                                     {(!rule.conditions.assignment_method || rule.conditions.assignment_method === "direct") && "Direct"}
+                                   </Badge>
+                                 </TableCell>
+                                 <TableCell>
+                                   <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                                     {rule.is_active ? 'Active' : 'Inactive'}
+                                   </Badge>
+                                 </TableCell>
+                               </TableRow>
+                             ))}
                           </TableBody>
                         </Table>
                       </CardContent>
-                    </Card>
-                  </div>
+                     </Card>
+
+                     {/* Enhanced Assignment Test */}
+                     <EnhancedLeadAssignmentTest />
+                   </div>
                 </DialogContent>
               </Dialog>
             </>
