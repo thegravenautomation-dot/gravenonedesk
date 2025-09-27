@@ -86,7 +86,7 @@ export function RealTimeNotificationBell() {
           }}
         >
           {notifications.length > 0 ? (
-            <Bell className="h-4 w-4" />
+            <Bell className={`h-4 w-4 ${unreadCount > 0 ? 'text-primary' : ''}`} />
           ) : (
             <BellOff className="h-4 w-4" />
           )}
