@@ -1036,14 +1036,22 @@ export function LeadManagement() {
                                 conditions: { ...newRule.conditions, source: value }
                               })}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-background">
                                 <SelectValue placeholder="Select source" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="bg-background border shadow-lg z-50">
                                 <SelectItem value="any">Any Source</SelectItem>
+                                <SelectItem value="indiamart">IndiaMART</SelectItem>
+                                <SelectItem value="tradeindia">TradeIndia</SelectItem>
+                                <SelectItem value="website">Website</SelectItem>
+                                <SelectItem value="referral">Referral</SelectItem>
+                                <SelectItem value="email">Email Campaign</SelectItem>
+                                <SelectItem value="phone">Phone Inquiry</SelectItem>
+                                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                                <SelectItem value="manual">Manual Entry</SelectItem>
                                 {leadSources.map((source) => (
-                                  <SelectItem key={source.id} value={source.name}>
-                                    {source.name}
+                                  <SelectItem key={source.id} value={source.source_type}>
+                                    {source.name} ({source.source_type})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
