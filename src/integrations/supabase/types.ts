@@ -2455,6 +2455,10 @@ export type Database = {
         Args: { p_branch_id: string; p_lead_id: string }
         Returns: string
       }
+      assign_lead_smart_with_log: {
+        Args: { p_branch_id: string; p_lead_id: string }
+        Returns: string
+      }
       can_access_employee_data: {
         Args: { _employee_branch_id: string; _user_id: string }
         Returns: boolean
