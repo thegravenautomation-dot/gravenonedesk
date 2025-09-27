@@ -13,7 +13,7 @@ import NotFound from "@/pages/NotFound";
 
 // Dashboard Pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
-import SalesDashboard from "@/pages/sales/SalesDashboard";
+import IntegratedSalesDashboard from "@/pages/sales/IntegratedSalesDashboard";
 import AccountsDashboard from "@/pages/accounts/AccountsDashboard";
 import HRDashboard from "@/pages/hr/HRDashboard";
 import ProcurementDashboard from "@/pages/procurement/ProcurementDashboard";
@@ -120,7 +120,7 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <RoleRoute allowedRoles={['admin', 'manager', 'executive']}>
-                        <SalesDashboard />
+                        <IntegratedSalesDashboard />
                       </RoleRoute>
                     </ProtectedRoute>
                   } 
