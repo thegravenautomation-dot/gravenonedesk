@@ -4,14 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Bell, BellOff, Check, CheckCheck, Trash2, Circle } from "lucide-react";
+import { Bell, BellOff, Check, CheckCheck, Trash2, Circle, ExternalLink } from "lucide-react";
 import { useRealTimeNotifications } from "@/hooks/useRealTimeNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 export function RealTimeNotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { 
     notifications, 
     unreadCount, 
@@ -41,20 +44,103 @@ export function RealTimeNotificationBell() {
     }
   };
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
+  const navigateToEntity = async (notification: any) => {
+    const { entity_type, entity_id } = notification;
+    
     try {
-      if (!isRead) {
-        await markAsRead(notificationId);
-        toast({
-          title: "Notification marked as read",
-          description: "Notification has been marked as read",
-        });
+      switch (entity_type) {
+        case 'payment':
+          // Find the order associated with this payment
+          const { data: paymentData, error: paymentError } = await supabase
+            .from('payments')
+            .select('order_id, orders(*)')
+            .eq('id', entity_id)
+            .single();
+          
+          if (paymentError) throw paymentError;
+          
+          if (paymentData?.order_id) {
+            // Navigate to accounts dashboard and scroll to the order
+            navigate('/accounts');
+            toast({
+              title: "Navigating to Payment",
+              description: `Showing order ${paymentData.orders?.order_no} payment details`,
+            });
+          }
+          break;
+          
+        case 'order':
+          // Navigate to sales dashboard for order management
+          navigate('/sales');
+          toast({
+            title: "Navigating to Order",
+            description: "Opening sales dashboard to view order details",
+          });
+          break;
+          
+        case 'lead':
+          // Navigate to sales dashboard for lead management
+          navigate('/sales');
+          toast({
+            title: "Navigating to Lead",
+            description: "Opening sales dashboard to view lead details",
+          });
+          break;
+          
+        case 'shipment':
+          // Navigate to dispatch dashboard
+          navigate('/dispatch');
+          toast({
+            title: "Navigating to Shipment",
+            description: "Opening dispatch dashboard to view shipment details",
+          });
+          break;
+          
+        case 'customer':
+          // Navigate to accounts dashboard for customer management
+          navigate('/accounts');
+          toast({
+            title: "Navigating to Customer",
+            description: "Opening accounts dashboard to view customer details",
+          });
+          break;
+          
+        default:
+          // For other types, just show a generic message
+          toast({
+            title: "Notification Details",
+            description: notification.message,
+          });
+          break;
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error navigating to entity:', error);
+      toast({
+        title: "Navigation Error",
+        description: "Could not navigate to the related item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      // Mark as read if not already read
+      if (!notification.is_read) {
+        await markAsRead(notification.id);
+      }
+      
+      // Navigate to the relevant entity
+      await navigateToEntity(notification);
+      
+      // Close the popover
+      setIsOpen(false);
+      
+    } catch (error) {
+      console.error('Error handling notification click:', error);
       toast({
         title: "Error",
-        description: "Failed to mark notification as read",
+        description: "Failed to process notification",
         variant: "destructive",
       });
     }
@@ -136,10 +222,10 @@ export function RealTimeNotificationBell() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-accent/50 transition-colors cursor-pointer ${
+                  className={`p-4 hover:bg-accent/50 transition-colors cursor-pointer group ${
                     !notification.is_read ? 'bg-accent/20' : ''
                   }`}
-                  onClick={() => handleNotificationClick(notification.id, notification.is_read)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-0.5">
@@ -147,8 +233,9 @@ export function RealTimeNotificationBell() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
                           {notification.title}
+                          <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                         </p>
                         {!notification.is_read && (
                           <Circle className="h-2 w-2 text-blue-500 fill-current flex-shrink-0 ml-2" />
