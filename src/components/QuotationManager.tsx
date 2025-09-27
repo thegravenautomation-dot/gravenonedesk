@@ -56,6 +56,8 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
   const [loading, setLoading] = useState(false);
   const [branchData, setBranchData] = useState<BranchData | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(customerId || "");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const [quotationData, setQuotationData] = useState({
@@ -83,11 +85,21 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
     if (profile?.branch_id) {
       fetchBranchData();
       generateQuotationNumber();
+      fetchCustomers();
     }
     if (customerId) {
-      fetchCustomerData();
+      setSelectedCustomerId(customerId);
+      fetchCustomerData(customerId);
     }
   }, [profile?.branch_id, customerId]);
+
+  useEffect(() => {
+    if (selectedCustomerId) {
+      fetchCustomerData(selectedCustomerId);
+    } else {
+      setCustomerData(null);
+    }
+  }, [selectedCustomerId]);
 
   const fetchBranchData = async () => {
     try {
@@ -113,14 +125,34 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
     }
   };
 
-  const fetchCustomerData = async () => {
-    if (!customerId) return;
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, name, company')
+        .eq('branch_id', profile?.branch_id)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching customers:', error);
+        return;
+      }
+      
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  const fetchCustomerData = async (custId?: string) => {
+    const targetCustomerId = custId || selectedCustomerId;
+    if (!targetCustomerId) return;
     
     try {
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('id', customerId)
+        .eq('id', targetCustomerId)
         .maybeSingle();
 
       if (error) {
@@ -230,10 +262,10 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
 
   const handleSaveQuotation = async () => {
     try {
-      if (!quotationData.quotation_no || items.some(item => !item.item_name)) {
+      if (!quotationData.quotation_no || items.some(item => !item.item_name) || !selectedCustomerId) {
         toast({
           title: "Validation Error",
-          description: "Please fill in the quotation number and all item names",
+          description: "Please fill in the quotation number, select a customer, and add all item names",
           variant: "destructive",
         });
         return;
@@ -256,7 +288,7 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .from('quotations')
         .insert({
           quotation_no: quotationData.quotation_no,
-          customer_id: customerId || null,
+          customer_id: selectedCustomerId || null,
           lead_id: leadId || null,
           branch_id: profile.branch_id,
           subtotal: subtotal,
@@ -331,7 +363,7 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .from('quotations')
         .insert({
           quotation_no: quotationData.quotation_no,
-          customer_id: customerId,
+          customer_id: selectedCustomerId,
           lead_id: leadId,
           branch_id: profile?.branch_id,
           subtotal: subtotal,
@@ -393,7 +425,7 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
         .insert({
           invoice_no: invoiceNo,
           invoice_type: 'proforma',
-          customer_id: customerId,
+          customer_id: selectedCustomerId,
           branch_id: profile?.branch_id,
           subtotal: subtotal,
           tax_amount: totalGst,
@@ -471,10 +503,19 @@ export function QuotationManager({ leadId, customerId, onSuccess }: QuotationMan
           />
         </div>
         <div>
-          <Label>Customer</Label>
-          <p className="text-sm font-medium py-2">
-            {customerData?.name || "No customer selected"}
-          </p>
+          <Label htmlFor="customer">Customer *</Label>
+          <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a customer" />
+            </SelectTrigger>
+            <SelectContent>
+              {customers.map((customer) => (
+                <SelectItem key={customer.id} value={customer.id}>
+                  {customer.name} {customer.company && `(${customer.company})`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
