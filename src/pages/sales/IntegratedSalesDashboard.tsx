@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,7 @@ export default function IntegratedSalesDashboard() {
   const { profile } = useAuth();
   const roleAccess = useRoleAccess();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<SalesMetrics>({
     totalLeads: 0,
@@ -251,7 +253,17 @@ export default function IntegratedSalesDashboard() {
               {isRealTimeConnected ? "Live" : "Offline"}
             </Badge>
           </div>
-          <RealTimeNotificationBell />
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate('/sales/pipeline')} variant="outline" size="sm">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Pipeline
+            </Button>
+            <Button onClick={() => navigate('/analytics/customers')} variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2" />
+              Analytics
+            </Button>
+            <RealTimeNotificationBell />
+          </div>
         </div>
 
         {/* Metrics Dashboard */}

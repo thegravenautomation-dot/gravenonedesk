@@ -26,6 +26,7 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 import BranchManagement from "@/pages/admin/BranchManagement";
 import VendorRegistration from "@/pages/vendor/VendorRegistration";
 import VendorPortal from "@/pages/vendor/VendorPortal";
+import { CustomerAnalytics } from "@/pages/analytics/CustomerAnalytics";
 import { SalesPipeline } from "@/pages/sales/SalesPipeline";
 import { CommunicationDashboard } from "@/pages/communication/CommunicationDashboard";
 
@@ -233,16 +234,17 @@ function App() {
                   } 
                 />
                 
-                <Route 
-                  path="/analytics" 
+                <Route
+                  path="/analytics/customers" 
                   element={
                     <ProtectedRoute>
                       <RoleRoute allowedRoles={['admin', 'manager']}>
-                        <AnalyticsDashboard />
+                        <CustomerAnalytics />
                       </RoleRoute>
                     </ProtectedRoute>
                   } 
                 />
+                
                 
                 <Route 
                   path="/security" 
