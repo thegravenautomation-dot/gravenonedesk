@@ -403,10 +403,12 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          assigned_executive: string | null
           billing_address: string | null
           branch_id: string | null
           city: string | null
           company: string | null
+          country: string | null
           created_at: string | null
           created_by: string | null
           credit_limit: number | null
@@ -414,10 +416,12 @@ export type Database = {
           email: string | null
           gstin: string | null
           id: string
+          industry: string | null
           name: string
           pan: string | null
           phone: string | null
           pincode: string | null
+          region: string | null
           shipping_address: string | null
           state: string | null
           updated_at: string | null
@@ -425,10 +429,12 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_executive?: string | null
           billing_address?: string | null
           branch_id?: string | null
           city?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           credit_limit?: number | null
@@ -436,10 +442,12 @@ export type Database = {
           email?: string | null
           gstin?: string | null
           id?: string
+          industry?: string | null
           name: string
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          region?: string | null
           shipping_address?: string | null
           state?: string | null
           updated_at?: string | null
@@ -447,10 +455,12 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_executive?: string | null
           billing_address?: string | null
           branch_id?: string | null
           city?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           credit_limit?: number | null
@@ -458,10 +468,12 @@ export type Database = {
           email?: string | null
           gstin?: string | null
           id?: string
+          industry?: string | null
           name?: string
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          region?: string | null
           shipping_address?: string | null
           state?: string | null
           updated_at?: string | null
