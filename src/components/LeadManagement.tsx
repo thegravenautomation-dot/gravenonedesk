@@ -136,7 +136,10 @@ export function LeadManagement() {
       value_max: 0,
       region: "",
       city: "",
-      state: ""
+      state: "",
+      country: "",
+      industry: "",
+      product_category: ""
     }
   });
 
@@ -700,7 +703,10 @@ export function LeadManagement() {
           value_max: 0,
           region: "",
           city: "",
-          state: ""
+          state: "",
+          country: "",
+          industry: "",
+          product_category: ""
         }
       });
 
@@ -977,7 +983,7 @@ export function LeadManagement() {
                     Assignment Rules
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl">
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Lead Assignment Rules</DialogTitle>
                     <DialogDescription>
@@ -1084,7 +1090,161 @@ export function LeadManagement() {
                             />
                           </div>
 
-                          <div className="col-span-2">
+                          <div className="space-y-2">
+                            <Label>Region Filter</Label>
+                            <Input
+                              value={newRule.conditions.region}
+                              onChange={(e) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, region: e.target.value }
+                              })}
+                              placeholder="e.g., North India, South India"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>State Filter</Label>
+                            <Select 
+                              value={newRule.conditions.state} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, state: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select state" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any State</SelectItem>
+                                <SelectItem value="Maharashtra">Maharashtra</SelectItem>
+                                <SelectItem value="Gujarat">Gujarat</SelectItem>
+                                <SelectItem value="Karnataka">Karnataka</SelectItem>
+                                <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
+                                <SelectItem value="Delhi">Delhi</SelectItem>
+                                <SelectItem value="Uttar Pradesh">Uttar Pradesh</SelectItem>
+                                <SelectItem value="West Bengal">West Bengal</SelectItem>
+                                <SelectItem value="Rajasthan">Rajasthan</SelectItem>
+                                <SelectItem value="Punjab">Punjab</SelectItem>
+                                <SelectItem value="Haryana">Haryana</SelectItem>
+                                <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
+                                <SelectItem value="Bihar">Bihar</SelectItem>
+                                <SelectItem value="Odisha">Odisha</SelectItem>
+                                <SelectItem value="Kerala">Kerala</SelectItem>
+                                <SelectItem value="Andhra Pradesh">Andhra Pradesh</SelectItem>
+                                <SelectItem value="Telangana">Telangana</SelectItem>
+                                <SelectItem value="Assam">Assam</SelectItem>
+                                <SelectItem value="Jharkhand">Jharkhand</SelectItem>
+                                <SelectItem value="Uttarakhand">Uttarakhand</SelectItem>
+                                <SelectItem value="Himachal Pradesh">Himachal Pradesh</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Country Filter</Label>
+                            <Select 
+                              value={newRule.conditions.country} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, country: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Country</SelectItem>
+                                <SelectItem value="India">India</SelectItem>
+                                <SelectItem value="USA">United States</SelectItem>
+                                <SelectItem value="UK">United Kingdom</SelectItem>
+                                <SelectItem value="Canada">Canada</SelectItem>
+                                <SelectItem value="Australia">Australia</SelectItem>
+                                <SelectItem value="Germany">Germany</SelectItem>
+                                <SelectItem value="UAE">UAE</SelectItem>
+                                <SelectItem value="Singapore">Singapore</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>City Filter</Label>
+                            <Input
+                              value={newRule.conditions.city}
+                              onChange={(e) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, city: e.target.value }
+                              })}
+                              placeholder="e.g., Mumbai, Delhi, Bangalore"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Industry Filter</Label>
+                            <Select 
+                              value={newRule.conditions.industry} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, industry: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select industry" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Industry</SelectItem>
+                                <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                                <SelectItem value="IT & Software">IT & Software</SelectItem>
+                                <SelectItem value="Healthcare">Healthcare</SelectItem>
+                                <SelectItem value="Retail">Retail</SelectItem>
+                                <SelectItem value="Education">Education</SelectItem>
+                                <SelectItem value="Finance">Finance</SelectItem>
+                                <SelectItem value="Real Estate">Real Estate</SelectItem>
+                                <SelectItem value="Automotive">Automotive</SelectItem>
+                                <SelectItem value="Agriculture">Agriculture</SelectItem>
+                                <SelectItem value="Construction">Construction</SelectItem>
+                                <SelectItem value="Textiles">Textiles</SelectItem>
+                                <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+                                <SelectItem value="Chemicals">Chemicals</SelectItem>
+                                <SelectItem value="Electronics">Electronics</SelectItem>
+                                <SelectItem value="Energy">Energy</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Product Category Filter</Label>
+                            <Select 
+                              value={newRule.conditions.product_category} 
+                              onValueChange={(value) => setNewRule({ 
+                                ...newRule, 
+                                conditions: { ...newRule.conditions, product_category: value }
+                              })}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Select product category" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border shadow-lg z-50">
+                                <SelectItem value="">Any Product Category</SelectItem>
+                                <SelectItem value="Industrial Machinery">Industrial Machinery</SelectItem>
+                                <SelectItem value="Raw Materials">Raw Materials</SelectItem>
+                                <SelectItem value="Electronics & Components">Electronics & Components</SelectItem>
+                                <SelectItem value="Chemicals & Pharmaceuticals">Chemicals & Pharmaceuticals</SelectItem>
+                                <SelectItem value="Office Supplies">Office Supplies</SelectItem>
+                                <SelectItem value="Packaging Materials">Packaging Materials</SelectItem>
+                                <SelectItem value="Tools & Equipment">Tools & Equipment</SelectItem>
+                                <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                                <SelectItem value="IT Hardware">IT Hardware</SelectItem>
+                                <SelectItem value="Software & Services">Software & Services</SelectItem>
+                                <SelectItem value="Medical Equipment">Medical Equipment</SelectItem>
+                                <SelectItem value="Furniture & Fixtures">Furniture & Fixtures</SelectItem>
+                                <SelectItem value="Consumer Goods">Consumer Goods</SelectItem>
+                                <SelectItem value="Food Products">Food Products</SelectItem>
+                                <SelectItem value="Textiles & Garments">Textiles & Garments</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="col-span-full">
                             <Button onClick={handleAddAssignmentRule} className="w-full">
                               Add Rule
                             </Button>
@@ -1114,13 +1274,42 @@ export function LeadManagement() {
                                 <TableCell>{rule.priority}</TableCell>
                                 <TableCell>{rule.name}</TableCell>
                                 <TableCell>{rule.profiles?.full_name}</TableCell>
-                                <TableCell>
-                                  <div className="text-sm">
-                                    {rule.conditions.source && rule.conditions.source !== "any" && <div>Source: {rule.conditions.source}</div>}
-                                    {rule.conditions.value_min > 0 && <div>Min: ₹{rule.conditions.value_min}</div>}
-                                    {rule.conditions.value_max > 0 && <div>Max: ₹{rule.conditions.value_max}</div>}
-                                  </div>
-                                </TableCell>
+                                 <TableCell>
+                                   <div className="text-sm space-y-1">
+                                     {rule.conditions.source && rule.conditions.source !== "any" && (
+                                       <div><span className="font-medium">Source:</span> {rule.conditions.source}</div>
+                                     )}
+                                     {rule.conditions.value_min > 0 && (
+                                       <div><span className="font-medium">Min Value:</span> ₹{rule.conditions.value_min}</div>
+                                     )}
+                                     {rule.conditions.value_max > 0 && (
+                                       <div><span className="font-medium">Max Value:</span> ₹{rule.conditions.value_max}</div>
+                                     )}
+                                     {rule.conditions.region && (
+                                       <div><span className="font-medium">Region:</span> {rule.conditions.region}</div>
+                                     )}
+                                     {rule.conditions.state && (
+                                       <div><span className="font-medium">State:</span> {rule.conditions.state}</div>
+                                     )}
+                                     {rule.conditions.country && (
+                                       <div><span className="font-medium">Country:</span> {rule.conditions.country}</div>
+                                     )}
+                                     {rule.conditions.city && (
+                                       <div><span className="font-medium">City:</span> {rule.conditions.city}</div>
+                                     )}
+                                     {rule.conditions.industry && (
+                                       <div><span className="font-medium">Industry:</span> {rule.conditions.industry}</div>
+                                     )}
+                                     {rule.conditions.product_category && (
+                                       <div><span className="font-medium">Product Category:</span> {rule.conditions.product_category}</div>
+                                     )}
+                                     {!rule.conditions.source && !rule.conditions.value_min && !rule.conditions.value_max && 
+                                      !rule.conditions.region && !rule.conditions.state && !rule.conditions.country && 
+                                      !rule.conditions.city && !rule.conditions.industry && !rule.conditions.product_category && (
+                                       <div className="text-gray-500">No specific conditions</div>
+                                     )}
+                                   </div>
+                                 </TableCell>
                                 <TableCell>
                                   <Badge variant={rule.is_active ? 'default' : 'secondary'}>
                                     {rule.is_active ? 'Active' : 'Inactive'}
