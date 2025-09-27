@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
+import { DispatchNotificationManager } from "./DispatchNotificationManager";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -18,6 +19,8 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
           {children}
         </main>
       </div>
+      {/* Real-time notification manager */}
+      <DispatchNotificationManager />
     </div>
   );
 }

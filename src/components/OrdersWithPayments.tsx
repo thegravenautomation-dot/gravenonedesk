@@ -15,6 +15,7 @@ import { OrderDetailsModal } from "./OrderDetailsModal";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { OrderPaymentSummaryReport } from "./reports/OrderPaymentSummaryReport";
 import { exportToPDF, exportOrderPaymentToExcel } from "@/lib/reportExports";
+import { useRealTimeOrders } from "@/hooks/useRealTimeOrders";
 import { useRef } from "react";
 
 interface OrderWithPayments {
@@ -38,6 +39,7 @@ export function OrdersWithPayments() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const roleAccess = useRoleAccess();
+  const { refreshTrigger } = useRealTimeOrders();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<OrderWithPayments[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,7 +58,7 @@ export function OrdersWithPayments() {
       fetchOrdersWithPayments();
       fetchBranchData();
     }
-  }, [profile?.branch_id]);
+  }, [profile?.branch_id, refreshTrigger]);
 
   const fetchBranchData = async () => {
     try {
@@ -73,42 +75,8 @@ export function OrdersWithPayments() {
     }
   };
 
-  // Real-time subscription for order updates
-  useEffect(() => {
-    if (!profile?.branch_id) return;
-
-    const channel = supabase
-      .channel('orders-payments-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `branch_id=eq.${profile.branch_id}`
-        },
-        () => {
-          fetchOrdersWithPayments();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'payments',
-          filter: `branch_id=eq.${profile.branch_id}`
-        },
-        () => {
-          fetchOrdersWithPayments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile?.branch_id]);
+  // Remove the old real-time subscription since we're using the hook now
+  // The useRealTimeOrders hook handles all real-time updates
 
   const fetchOrdersWithPayments = async () => {
     try {

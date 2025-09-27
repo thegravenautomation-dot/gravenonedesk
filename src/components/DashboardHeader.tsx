@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ProfileView } from "@/components/ProfileView";
 import { useState } from "react";
-import { RealtimeNotificationBell } from "@/components/RealtimeNotificationBell";
+import { RealTimeNotificationBell } from "@/components/RealTimeNotificationBell";
 
 interface DashboardHeaderProps {
   title: string;
@@ -78,7 +78,7 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
           </div>
 
           {/* Notifications */}
-          <RealtimeNotificationBell />
+          <RealTimeNotificationBell />
 
           {/* User Menu */}
           <DropdownMenu>
