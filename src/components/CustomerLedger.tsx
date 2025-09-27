@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Edit, RotateCcw, FileText, TrendingUp, TrendingDown, FileBarChart, FileSpreadsheet } from "lucide-react";
 import { CustomerLedgerReport } from "./reports/CustomerLedgerReport";
 import { exportToPDF, exportCustomerLedgerToExcel } from "@/lib/reportExports";
+import { useRealTimeOrders } from "@/hooks/useRealTimeOrders";
 
 interface CustomerLedgerProps {
   customerId?: string;
@@ -36,6 +37,7 @@ interface LedgerEntry {
 export function CustomerLedger({ customerId }: CustomerLedgerProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { refreshTrigger } = useRealTimeOrders();
   const [loading, setLoading] = useState(false);
   const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -85,7 +87,7 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
       fetchLedgerEntries();
       fetchAccountSummary();
     }
-  }, [selectedCustomerId]);
+  }, [selectedCustomerId, refreshTrigger]);
 
   const fetchAccountSummary = async () => {
     try {
@@ -327,7 +329,7 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
                 Add Entry
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="z-50">
               <DialogHeader>
                 <DialogTitle>
                   {editingEntry ? 'Edit Ledger Entry' : 'Add Manual Entry'}
@@ -535,7 +537,7 @@ export function CustomerLedger({ customerId }: CustomerLedgerProps) {
 
           {/* Report Dialog */}
           <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
               <DialogHeader>
                 <DialogTitle>Customer Ledger Report</DialogTitle>
                 <DialogDescription>

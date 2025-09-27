@@ -311,18 +311,18 @@ export function OrdersWithPayments() {
                 New Order
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Order</DialogTitle>
-              <DialogDescription>
-                Create a new order with attachments and payment recording
-              </DialogDescription>
-            </DialogHeader>
-            <OrderManager onSuccess={() => {
-              setIsOrderDialogOpen(false);
-              fetchOrdersWithPayments();
-            }} />
-          </DialogContent>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
+              <DialogHeader>
+                <DialogTitle>Create New Order</DialogTitle>
+                <DialogDescription>
+                  Create a new order with attachments and payment recording
+                </DialogDescription>
+              </DialogHeader>
+              <OrderManager onSuccess={() => {
+                setIsOrderDialogOpen(false);
+                fetchOrdersWithPayments();
+              }} />
+            </DialogContent>
         </Dialog>
         )}
       </div>
@@ -444,19 +444,19 @@ export function OrdersWithPayments() {
                                  Payments
                                </Button>
                              </DialogTrigger>
-                           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                             <DialogHeader>
-                               <DialogTitle>Payment Management - {order.order_no}</DialogTitle>
-                               <DialogDescription>
-                                 Record and manage payments for this order
-                               </DialogDescription>
-                             </DialogHeader>
-                             <PaymentManager 
-                               orderId={order.id} 
-                               customerId={order.customer_id}
-                               onSuccess={() => fetchOrdersWithPayments()}
-                             />
-                           </DialogContent>
+                            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
+                              <DialogHeader>
+                                <DialogTitle>Payment Management - {order.order_no}</DialogTitle>
+                                <DialogDescription>
+                                  Record and manage payments for this order
+                                </DialogDescription>
+                              </DialogHeader>
+                              <PaymentManager 
+                                orderId={order.id} 
+                                customerId={order.customer_id}
+                                onSuccess={() => fetchOrdersWithPayments()}
+                              />
+                            </DialogContent>
                          </Dialog>
                          )}
                          <Button
@@ -497,7 +497,7 @@ export function OrdersWithPayments() {
 
       {/* Report Dialog */}
       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto z-50">
           <DialogHeader>
             <DialogTitle>Order Payment Summary Report</DialogTitle>
             <DialogDescription>
