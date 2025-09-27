@@ -908,6 +908,63 @@ export type Database = {
           },
         ]
       }
+      items: {
+        Row: {
+          added_by: string
+          branch_id: string
+          category: string | null
+          created_at: string
+          current_stock: number | null
+          description: string | null
+          hsn_code: string | null
+          id: string
+          last_updated: string | null
+          minimum_stock: number | null
+          name: string
+          price: number | null
+          source: string
+          status: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          branch_id: string
+          category?: string | null
+          created_at?: string
+          current_stock?: number | null
+          description?: string | null
+          hsn_code?: string | null
+          id?: string
+          last_updated?: string | null
+          minimum_stock?: number | null
+          name: string
+          price?: number | null
+          source?: string
+          status?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          branch_id?: string
+          category?: string | null
+          created_at?: string
+          current_stock?: number | null
+          description?: string | null
+          hsn_code?: string | null
+          id?: string
+          last_updated?: string | null
+          minimum_stock?: number | null
+          name?: string
+          price?: number | null
+          source?: string
+          status?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_assignment_log: {
         Row: {
           assigned_by: string | null
