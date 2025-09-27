@@ -28,19 +28,29 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
       toast({
-        title: "Success",
-        description: "You have been signed out successfully",
+        title: "Signing out...",
+        description: "Please wait while we sign you out",
       });
-      navigate("/auth");
+      
+      await signOut();
+      
+      // The signOut function now handles redirect, but add fallback
+      setTimeout(() => {
+        if (window.location.pathname !== '/auth') {
+          navigate("/auth", { replace: true });
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error("Sign out error:", error);
       toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
+        title: "Signed out",
+        description: "You have been signed out (with errors)",
         variant: "destructive",
       });
+      // Force redirect even on error
+      navigate("/auth", { replace: true });
     }
   };
 

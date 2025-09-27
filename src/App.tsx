@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 
 // Pages
 import Index from "@/pages/Index";
@@ -32,7 +33,7 @@ const queryClient = new QueryClient();
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useSessionPersistence();
 
   if (loading) {
     return (

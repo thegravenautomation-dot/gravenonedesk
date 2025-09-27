@@ -40,7 +40,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isActive = true; // Prevent state updates if component unmounts
 
-    // Listen for auth changes first
+    // Restore session from localStorage on app load
+    const restoreSession = () => {
+      try {
+        const storedSession = localStorage.getItem('graven-session');
+        const storedProfile = localStorage.getItem('graven-profile');
+        
+        if (storedSession && storedProfile) {
+          const sessionData = JSON.parse(storedSession);
+          const profileData = JSON.parse(storedProfile);
+          
+          // Only restore if session is not expired
+          if (sessionData.expires_at && new Date(sessionData.expires_at * 1000) > new Date()) {
+            setSession(sessionData);
+            setUser(sessionData.user);
+            setProfile(profileData);
+          } else {
+            // Clean up expired data
+            localStorage.removeItem('graven-session');
+            localStorage.removeItem('graven-profile');
+          }
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        localStorage.removeItem('graven-session');
+        localStorage.removeItem('graven-profile');
+      }
+    };
+
+    // Restore session first
+    restoreSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isActive) return;
       
@@ -48,16 +79,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       
+      // Store or clear session data in localStorage
       if (session?.user) {
-        // Use setTimeout to prevent blocking the auth callback
-        setTimeout(() => {
-          if (isActive) {
-            fetchProfile(session.user.id);
-          }
-        }, 100);
+        try {
+          localStorage.setItem('graven-session', JSON.stringify(session));
+          // Use setTimeout to prevent blocking the auth callback
+          setTimeout(() => {
+            if (isActive) {
+              fetchProfile(session.user.id);
+            }
+          }, 100);
+        } catch (error) {
+          console.error('Error storing session:', error);
+        }
       } else {
         setProfile(null);
-        // Clear any cached data on sign out
+        // Clear all cached data on sign out
+        localStorage.removeItem('graven-session');
+        localStorage.removeItem('graven-profile');
         localStorage.removeItem('supabase.auth.token');
       }
       setLoading(false);
@@ -75,9 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!isActive) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          localStorage.setItem('graven-session', JSON.stringify(session));
           fetchProfile(session.user.id);
         }
       } catch (error) {
@@ -89,7 +129,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    getInitialSession();
+    // Only fetch initial session if we don't have a restored session
+    if (!session) {
+      getInitialSession();
+    } else {
+      setLoading(false);
+    }
 
     return () => {
       isActive = false;
@@ -119,6 +164,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setProfile(data);
+      // Store profile data in localStorage for persistence
+      try {
+        localStorage.setItem('graven-profile', JSON.stringify(data));
+      } catch (error) {
+        console.error('Error storing profile:', error);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       // Don't throw error to prevent auth flow from breaking
@@ -151,17 +202,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setProfile(null);
       
-      // Clear any local storage items
+      // Clear all local storage items
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('graven-session');
+      localStorage.removeItem('graven-profile');
       localStorage.removeItem('DEMO_MODE');
+      
+      // Clear sessionStorage as well
+      sessionStorage.clear();
       
       // Sign out from Supabase (this will trigger the auth state change)
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
       console.log('User signed out successfully');
+      
+      // Force redirect to auth page after cleanup
+      setTimeout(() => {
+        window.location.href = '/auth';
+      }, 100);
+      
     } catch (error) {
       console.error('Sign out error:', error);
+      // Even if Supabase signOut fails, clear local data and redirect
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/auth';
       throw error;
     }
   }
