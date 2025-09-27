@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Building2, Mail, Phone, MapPin, Edit, Calendar, FileText } from "lucide-react";
 import { FollowUpScheduler } from "./FollowUpScheduler";
-import { CustomerLedger } from "./CustomerLedger";
+import { CustomerLedgerTab } from "./CustomerLedgerTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CustomerProfileProps {
@@ -474,7 +474,10 @@ export function CustomerProfile({
           </TabsContent>
           
           <TabsContent value="ledger" className="mt-6">
-            <CustomerLedger customerId={customerId} />
+            <CustomerLedgerTab 
+              customerId={customerId} 
+              customerName={customerData.name} 
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
